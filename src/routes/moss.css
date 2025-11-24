@@ -73,6 +73,10 @@ a.chip {
 .flex_1 {
 	flex: 1;
 }
+.font_size_xl {
+	font-size: var(--font_size_xl);
+	--font_size: var(--font_size_xl);
+}
 .font_size_xl5 {
 	font-size: var(--font_size_xl5);
 	--font_size: var(--font_size_xl5);

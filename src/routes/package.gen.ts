@@ -1,3 +1,3 @@
-// this is an optional pattern that makes your `package.json`
-// available as `$routes/package.ts` with automatic `const` types
-export * from '@ryanatkn/gro/package.gen.js';
+// this is an optional pattern that makes your `package.json` and library source code metadata
+// available as `$routes/package.ts`
+export * from '@ryanatkn/fuz/package.gen.js';

@@ -1,15 +1,15 @@
 <script lang="ts">
 	import Package_Detail from '@ryanatkn/fuz/Package_Detail.svelte';
-	import {parse_pkg} from '@ryanatkn/belt/pkg.js';
+	import {Pkg} from '@ryanatkn/fuz/pkg.svelte.js';
 	import Docs_Footer from '@ryanatkn/fuz/Docs_Footer.svelte';
-	import Community_Links_Panel from '@ryanatkn/fuz/Community_Links_Panel.svelte';
+	import Ecosystem_Links_Panel from '@ryanatkn/fuz/Ecosystem_Links_Panel.svelte';
 	import Breadcrumb from '@ryanatkn/fuz/Breadcrumb.svelte';
 	import Svg from '@ryanatkn/fuz/Svg.svelte';
 	import {fuz_logo} from '@ryanatkn/fuz/logos.js';
 
 	import {package_json, src_json} from '$routes/package.js';
 
-	const pkg = parse_pkg(package_json, src_json);
+	const pkg = new Pkg(package_json, src_json);
 
 	// TODO standardize
 </script>
@@ -29,7 +29,7 @@
 			<Package_Detail {pkg} />
 		</div>
 	</section>
-	<Community_Links_Panel />
+	<Ecosystem_Links_Panel />
 	<section class="box">
 		<Docs_Footer {pkg} root_url="https://www.fuz.dev/" />
 	</section>
