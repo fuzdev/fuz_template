@@ -1,8 +1,8 @@
 <script lang="ts">
-	import Package_Detail from '@ryanatkn/fuz/Package_Detail.svelte';
+	import PackageDetail from '@ryanatkn/fuz/PackageDetail.svelte';
 	import {Pkg} from '@ryanatkn/fuz/pkg.svelte.js';
-	import Docs_Footer from '@ryanatkn/fuz/Docs_Footer.svelte';
-	import Ecosystem_Links_Panel from '@ryanatkn/fuz/Ecosystem_Links_Panel.svelte';
+	import DocsFooter from '@ryanatkn/fuz/DocsFooter.svelte';
+	import EcosystemLinksPanel from '@ryanatkn/fuz/EcosystemLinksPanel.svelte';
 	import Breadcrumb from '@ryanatkn/fuz/Breadcrumb.svelte';
 	import Svg from '@ryanatkn/fuz/Svg.svelte';
 	import {fuz_logo} from '@ryanatkn/fuz/logos.js';
@@ -26,12 +26,12 @@
 	</section>
 	<section class="box width_100 mb_lg">
 		<div class="panel p_lg width_upto_md">
-			<Package_Detail {pkg} />
+			<PackageDetail {pkg} />
 		</div>
 	</section>
-	<Ecosystem_Links_Panel />
+	<EcosystemLinksPanel />
 	<section class="box">
-		<Docs_Footer {pkg} root_url="https://www.fuz.dev/" />
+		<DocsFooter {pkg} root_url="https://www.fuz.dev/" />
 	</section>
 </main>
 

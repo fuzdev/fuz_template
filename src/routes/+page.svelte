@@ -4,8 +4,8 @@
 	import Card from '@ryanatkn/fuz/Card.svelte';
 	import {resolve} from '$app/paths';
 	import {random_item} from '@ryanatkn/belt/random.js';
-	import Color_Scheme_Input from '@ryanatkn/fuz/Color_Scheme_Input.svelte';
-	import Theme_Input from '@ryanatkn/fuz/Theme_Input.svelte';
+	import ColorSchemeInput from '@ryanatkn/fuz/ColorSchemeInput.svelte';
+	import ThemeInput from '@ryanatkn/fuz/ThemeInput.svelte';
 
 	import Mreows, {items} from '$routes/Mreows.svelte';
 
@@ -23,9 +23,9 @@
 	<section class="box panel">
 		<div class="p_xl box">
 			<h2 class="mt_0">color scheme</h2>
-			<Color_Scheme_Input />
+			<ColorSchemeInput />
 			<h2>theme</h2>
-			<Theme_Input />
+			<ThemeInput />
 		</div>
 	</section>
 	<Mreows bind:mreows />
