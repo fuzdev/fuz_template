@@ -1,15 +1,15 @@
 <script lang="ts">
-	import PackageDetail from '@ryanatkn/fuz/PackageDetail.svelte';
-	import {Pkg} from '@ryanatkn/fuz/pkg.svelte.js';
+	import LibraryDetail from '@ryanatkn/fuz/LibraryDetail.svelte';
+	import {Library} from '@ryanatkn/fuz/library.svelte.js';
 	import DocsFooter from '@ryanatkn/fuz/DocsFooter.svelte';
 	import EcosystemLinksPanel from '@ryanatkn/fuz/EcosystemLinksPanel.svelte';
 	import Breadcrumb from '@ryanatkn/fuz/Breadcrumb.svelte';
 	import Svg from '@ryanatkn/fuz/Svg.svelte';
 	import {fuz_logo} from '@ryanatkn/fuz/logos.js';
 
-	import {package_json, src_json} from '$routes/package.js';
+	import {library_json} from '$routes/library.js';
 
-	const pkg = new Pkg(package_json, src_json);
+	const library = new Library(library_json);
 
 	// TODO standardize
 </script>
@@ -21,17 +21,17 @@
 			<h1 class="mt_xl2">fuz_template</h1>
 		</header>
 		<div style:--font_size="var(--font_size_xl)">
-			<Breadcrumb>{package_json.glyph}</Breadcrumb>
+			<Breadcrumb>{library_json.package_json.glyph}</Breadcrumb>
 		</div>
 	</section>
 	<section class="box width_100 mb_lg">
 		<div class="panel p_lg width_upto_md">
-			<PackageDetail {pkg} />
+			<LibraryDetail {library} />
 		</div>
 	</section>
 	<EcosystemLinksPanel />
 	<section class="box">
-		<DocsFooter {pkg} root_url="https://www.fuz.dev/" />
+		<DocsFooter {library} root_url="https://www.fuz.dev/" />
 	</section>
 </main>
 
