@@ -1,11 +1,11 @@
 <script lang="ts">
-	import Svg from '@ryanatkn/fuz/Svg.svelte';
-	import {fuz_logo} from '@ryanatkn/fuz/logos.js';
-	import Card from '@ryanatkn/fuz/Card.svelte';
+	import Svg from '@fuzdev/fuz_ui/Svg.svelte';
+	import {fuz_logo} from '@fuzdev/fuz_ui/logos.js';
+	import Card from '@fuzdev/fuz_ui/Card.svelte';
 	import {resolve} from '$app/paths';
-	import {random_item} from '@ryanatkn/belt/random.js';
-	import ColorSchemeInput from '@ryanatkn/fuz/ColorSchemeInput.svelte';
-	import ThemeInput from '@ryanatkn/fuz/ThemeInput.svelte';
+	import {random_item} from '@fuzdev/fuz_util/random.js';
+	import ColorSchemeInput from '@fuzdev/fuz_ui/ColorSchemeInput.svelte';
+	import ThemeInput from '@fuzdev/fuz_ui/ThemeInput.svelte';
 
 	import Mreows, {items} from '$routes/Mreows.svelte';
 

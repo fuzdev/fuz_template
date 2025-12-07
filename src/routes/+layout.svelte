@@ -1,10 +1,10 @@
 <script lang="ts">
-	import '@ryanatkn/moss/style.css';
-	import '@ryanatkn/moss/theme.css';
+	import '@fuzdev/fuz_css/style.css';
+	import '@fuzdev/fuz_css/theme.css';
 	import '$routes/moss.css';
 	import '$routes/style.css';
 
-	import Themed from '@ryanatkn/fuz/Themed.svelte';
+	import Themed from '@fuzdev/fuz_ui/Themed.svelte';
 	import type {Snippet} from 'svelte';
 
 	const {
@@ -15,7 +15,7 @@
 </script>
 
 <svelte:head>
-	<title>@ryanatkn/fuz_template</title>
+	<title>@fuzdev/fuz_template</title>
 </svelte:head>
 
 <Themed>
