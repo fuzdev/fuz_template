@@ -26,7 +26,7 @@
 </script>
 
 <script lang="ts">
-	import {random_item} from '@ryanatkn/belt/random.js';
+	import {random_item} from '@fuzdev/fuz_util/random.js';
 
 	import Positioned from '$routes/Positioned.svelte';
 
