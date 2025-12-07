@@ -17,7 +17,7 @@
 
 - [SvelteKit](https://github.com/sveltejs/kit) with [Svelte](https://github.com/sveltejs/svelte) and
   [Vite](https://github.com/vitejs/vite)
-- [Moss](https://github.com/fuzdev/fuz_css): CSS framework and design system based on style variables
+- [Fuz CSS](https://github.com/fuzdev/fuz_css): CSS framework and design system based on style variables
 - [Fuz UI](https://github.com/fuzdev/fuz_ui):
   - Svelte UI library - [ui.fuz.dev](https://ui.fuz.dev/)
   - is optional, to remove, `npm uninstall @fuzdev/fuz_ui` and delete the imports
@@ -150,7 +150,7 @@ gro deploy
 [TypeScript](https://github.com/microsoft/TypeScript) ∙
 [ESLint](https://github.com/eslint/eslint) ∙
 [Prettier](https://github.com/prettier/prettier) ∙
-[Moss](https://github.com/fuzdev/fuz_css) ∙
+[Fuz CSS](https://github.com/fuzdev/fuz_css) ∙
 [Fuz](https://github.com/fuzdev/fuz_ui) ∙
 [Gro](https://github.com/ryanatkn/gro) ∙
 [@fuzdev/fuz_util](https://github.com/fuzdev/fuz_util) ∙
