@@ -9,7 +9,7 @@
 > [Vite](https://github.com/vitejs/vite),
 > [esbuild](https://github.com/evanw/esbuild),
 > [Gro](https://github.com/ryanatkn/gro),
-> and [Fuz](https://github.com/fuzdev/fuz_ui)
+> and [Fuz UI](https://github.com/fuzdev/fuz_ui)
 
 [**template.fuz.dev**](https://template.fuz.dev/)
 
@@ -80,7 +80,7 @@ gro sync # called by `gro dev`, refreshes generated files and calls `svelte-kit 
 
 > learn more about [SvelteKit](https://github.com/sveltejs/kit),
 > [Vite](https://github.com/vitejs/vite), [Gro](https://github.com/ryanatkn/gro),
-> and [Fuz](https://github.com/fuzdev/fuz_ui)
+> and [Fuz UI](https://github.com/fuzdev/fuz_ui)
 
 The template includes
 [`@sveltejs/adapter-static`](https://github.com/sveltejs/kit/tree/master/packages/adapter-static)
