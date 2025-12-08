@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Svg from '@fuzdev/fuz_ui/Svg.svelte';
-	import {fuz_logo} from '@fuzdev/fuz_ui/logos.js';
+	import {logo_fuz} from '@fuzdev/fuz_ui/logos.js';
 	import Card from '@fuzdev/fuz_ui/Card.svelte';
 	import {resolve} from '$app/paths';
 	import {random_item} from '@fuzdev/fuz_util/random.js';
@@ -15,7 +15,7 @@
 <main>
 	<section class="box">
 		<header class="box pt_xl">
-			<Svg data={fuz_logo} size="var(--icon_size_xl)" />
+			<Svg data={logo_fuz} size="var(--icon_size_xl)" />
 			<h1 class="mt_xl2">fuz_template</h1>
 		</header>
 		<Card href={resolve('/about')} icon="">about</Card>
