@@ -28,6 +28,7 @@ export const library_json: LibraryJson = {
 			node: '>=22.15',
 		},
 		devDependencies: {
+			'@fuzdev/fuz_code': '^0.38.0',
 			'@fuzdev/fuz_css': '^0.42.1',
 			'@fuzdev/fuz_ui': '^0.172.0',
 			'@fuzdev/fuz_util': '^0.43.0',

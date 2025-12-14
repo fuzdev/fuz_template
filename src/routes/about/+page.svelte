@@ -1,5 +1,5 @@
 <script lang="ts">
-	import LibraryDetail from '@fuzdev/fuz_ui/LibraryDetail.svelte';
+	// import LibraryDetail from '@fuzdev/fuz_ui/LibraryDetail.svelte';
 	import {Library, library_context} from '@fuzdev/fuz_ui/library.svelte.js';
 	import DocsFooter from '@fuzdev/fuz_ui/DocsFooter.svelte';
 	import EcosystemLinksPanel from '@fuzdev/fuz_ui/EcosystemLinksPanel.svelte';
@@ -24,11 +24,11 @@
 			<Breadcrumb>{library_json.package_json.glyph}</Breadcrumb>
 		</div>
 	</section>
-	<section class="box width_100 mb_lg">
+	<!-- <section class="box width_100 mb_lg">
 		<div class="panel p_lg width_upto_md">
 			<LibraryDetail {library} />
 		</div>
-	</section>
+	</section> -->
 	<EcosystemLinksPanel />
 	<section class="box">
 		<DocsFooter {library} root_url="https://www.fuz.dev/" />

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import Svg from '@fuzdev/fuz_ui/Svg.svelte';
 	import {logo_fuz} from '@fuzdev/fuz_ui/logos.js';
-	import Card from '@fuzdev/fuz_ui/Card.svelte';
 	import {resolve} from '$app/paths';
 	import {random_item} from '@fuzdev/fuz_util/random.js';
 	import ColorSchemeInput from '@fuzdev/fuz_ui/ColorSchemeInput.svelte';
@@ -21,7 +20,11 @@
 			<Svg data={logo_fuz} size="var(--icon_size_xl)" />
 			<h1 class="mt_xl2">fuz_template</h1>
 		</header>
-		<Card href={resolve('/about')} icon="">about</Card>
+		<div class="column gap_lg">
+			<a href={resolve('/about')} class="panel px_xl py_md font_size_xl2 text_align_center">about</a
+			>
+			<a href={resolve('/docs')} class="panel px_xl py_md font_size_xl2 text_align_center">docs</a>
+		</div>
 	</section>
 	<section class="box panel">
 		<div class="p_xl box">
