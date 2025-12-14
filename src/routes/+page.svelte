@@ -7,9 +7,12 @@
 	import ColorSchemeInput from '@fuzdev/fuz_ui/ColorSchemeInput.svelte';
 	import ThemeInput from '@fuzdev/fuz_ui/ThemeInput.svelte';
 
-	import Mreows, {items} from '$routes/Mreows.svelte';
+	import Mreows, {mreow_items} from '$lib/Mreows.svelte';
 
-	let mreows: Array<{glyph: string}> | undefined = $state([random_item(items), items[4]!]);
+	let mreows: Array<{glyph: string}> | undefined = $state([
+		random_item(mreow_items),
+		mreow_items[4]!,
+	]);
 </script>
 
 <main>

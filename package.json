@@ -5,7 +5,7 @@
   "glyph": "❄",
   "logo": "logo.svg",
   "logo_alt": "a friendly pixelated spider facing you",
-  "public": true,
+  "private": true,
   "homepage": "https://template.fuz.dev/",
   "repository": "https://github.com/fuzdev/fuz_template",
   "scripts": {

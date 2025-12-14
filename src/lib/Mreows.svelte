@@ -3,7 +3,7 @@
 		glyph: string;
 	}
 
-	export const items: Array<Mreow> = [
+	export const mreow_items: Array<Mreow> = [
 		{glyph: '🐵'},
 		{glyph: '🐶'},
 		{glyph: '🐺'},
@@ -28,7 +28,7 @@
 <script lang="ts">
 	import {random_item} from '@fuzdev/fuz_util/random.js';
 
-	import Positioned from '$routes/Positioned.svelte';
+	import Positioned from './Positioned.svelte';
 
 	// don't use this component, it's just a hacky demo
 
@@ -39,7 +39,7 @@
 	} = $props();
 
 	const mreow = (): void => {
-		mreows = [{...random_item(items)}].concat(mreows);
+		mreows = [{...random_item(mreow_items)}].concat(mreows);
 	};
 
 	const COLUMN_COUNT = 5;

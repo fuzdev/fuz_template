@@ -45,23 +45,6 @@ so the normal commands like `vite dev` work as expected.
 It also uses [Gro](https://github.com/ryanatkn/gro)
 for tasks like deploying and more.
 
-**⚠️ Important,** this template is designed for **public** open source projects.
-Its `package.json` has `"public": true` by default,
-which [tells Gro](https://github.com/ryanatkn/gro/blob/main/src/docs/gro_plugin_sveltekit_app.md#well_known_package_json)
-to publish the `package.json` and a map of its `src/` directory
-to `static/.well-known/` during the build.
-This can leak sensitive information if you are not careful ⚠️
-To disable the feature, edit [package.json](/package.json):
-
-```diff
-// package.json
-- "public": true, // remove this to disable the public `.well-known` files
-+ "private": true, // if you want to disable npm publishing, add this
-```
-
-> [Windows will not be suported](https://github.com/fuzdev/fuz_template/issues/4)
-> because I chose Bash instead - [WSL](https://docs.microsoft.com/en-us/windows/wsl/about) works
-
 If you're logged into GitHub, click "Use this template" above or clone with
 [`degit`](https://github.com/Rich-Harris/degit):
 
@@ -81,6 +64,21 @@ gro sync # called by `gro dev`, refreshes generated files and calls `svelte-kit 
 > learn more about [SvelteKit](https://github.com/sveltejs/kit),
 > [Vite](https://github.com/vitejs/vite), [Gro](https://github.com/ryanatkn/gro),
 > and [Fuz UI](https://github.com/fuzdev/fuz_ui)
+
+To opt into publishing the `package.json`
+and a map of the `src/` directory
+to `static/.well-known/` during the build using
+[this Gro feature](https://github.com/ryanatkn/gro/blob/main/src/docs/gro_plugin_sveltekit_app.md#well_known_package_json).
+This can leak sensitive information, so enable it only if you intend it to be public!
+
+```diff
+// package.json
++ "public": true, // add this to opt into publishing public `.well-known` files
+- "private": true, // if you want to enable public npm publishing, remove this
+```
+
+> [Windows will not be suported](https://github.com/fuzdev/fuz_template/issues/4) because
+> I chose Bash instead - Fuz recommends [WSL](https://docs.microsoft.com/en-us/windows/wsl/about)
 
 The template includes
 [`@sveltejs/adapter-static`](https://github.com/sveltejs/kit/tree/master/packages/adapter-static)

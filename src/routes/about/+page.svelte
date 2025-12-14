@@ -1,15 +1,15 @@
 <script lang="ts">
 	import LibraryDetail from '@fuzdev/fuz_ui/LibraryDetail.svelte';
-	import {Library} from '@fuzdev/fuz_ui/library.svelte.js';
+	import {Library, library_context} from '@fuzdev/fuz_ui/library.svelte.js';
 	import DocsFooter from '@fuzdev/fuz_ui/DocsFooter.svelte';
 	import EcosystemLinksPanel from '@fuzdev/fuz_ui/EcosystemLinksPanel.svelte';
 	import Breadcrumb from '@fuzdev/fuz_ui/Breadcrumb.svelte';
 	import Svg from '@fuzdev/fuz_ui/Svg.svelte';
 	import {logo_fuz} from '@fuzdev/fuz_ui/logos.js';
 
-	import {library_json} from '$routes/library.js';
+	import {library_json} from '$routes/library.ts';
 
-	const library = new Library(library_json);
+	const library = library_context.set(new Library(library_json));
 
 	// TODO standardize
 </script>

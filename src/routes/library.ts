@@ -11,7 +11,7 @@ export const library_json: LibraryJson = {
 		glyph: '❄',
 		logo: 'logo.svg',
 		logo_alt: 'a friendly pixelated spider facing you',
-		public: true,
+		private: true,
 		homepage: 'https://template.fuz.dev/',
 		repository: 'https://github.com/fuzdev/fuz_template',
 		scripts: {
@@ -68,7 +68,56 @@ export const library_json: LibraryJson = {
 	source_json: {
 		name: '@fuzdev/fuz_template',
 		version: '0.0.1',
-		modules: [],
+		modules: [
+			{
+				path: 'Mreows.svelte',
+				declarations: [
+					{
+						name: 'Mreows',
+						kind: 'component',
+						props: [
+							{
+								name: 'mreows',
+								type: 'Array<Mreow>',
+								optional: true,
+								bindable: true,
+							},
+						],
+						source_line: 1,
+					},
+				],
+				dependencies: ['Positioned.svelte'],
+			},
+			{
+				path: 'Positioned.svelte',
+				declarations: [
+					{
+						name: 'Positioned',
+						kind: 'component',
+						props: [
+							{
+								name: 'x',
+								type: 'number',
+							},
+							{
+								name: 'y',
+								type: 'number',
+							},
+							{
+								name: 'scale',
+								type: 'number',
+							},
+							{
+								name: 'children',
+								type: 'Snippet',
+							},
+						],
+						source_line: 1,
+					},
+				],
+				dependents: ['Mreows.svelte'],
+			},
+		],
 	},
 	name: '@fuzdev/fuz_template',
 	repo_name: 'fuz_template',
