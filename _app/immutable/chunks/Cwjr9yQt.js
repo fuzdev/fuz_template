@@ -1,1 +1,0 @@
-import{i as c,j as _,v as o,E as d,M as E,N as T,O as b,n as v,D as y,m as i}from"./DPINkocx.js";function p(n,f,u=!1){_&&o();var r=new y(n),h=u?d:0;function t(a,s){if(_){const l=E(n)===T;if(a===l){var e=b();v(e),r.anchor=e,i(!1),r.ensure(a,s),i(!0);return}}r.ensure(a,s)}c(()=>{var a=!1;f((s,e=!0)=>{a=!0,t(e,s)}),a||t(!1,null)},h)}export{p as i};
