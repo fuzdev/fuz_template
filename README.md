@@ -65,16 +65,18 @@ gro sync # called by `gro dev`, refreshes generated files and calls `svelte-kit 
 > [Vite](https://github.com/vitejs/vite), [Gro](https://github.com/ryanatkn/gro),
 > and [Fuz UI](https://github.com/fuzdev/fuz_ui)
 
-To opt into publishing the `package.json`
-and a map of the `src/` directory
-to `static/.well-known/` during the build using
-[this Gro feature](https://github.com/ryanatkn/gro/blob/main/src/docs/gro_plugin_sveltekit_app.md#well_known_package_json).
+To publish `package.json` and a map of the `src/` directory
+to `.well-known/` in your build output, add the Vite plugin to your config.
 This can leak sensitive information, so enable it only if you intend it to be public!
 
-```diff
-// package.json
-+ "public": true, // add this to opt into publishing public `.well-known` files
-- "private": true, // if you want to enable public npm publishing, remove this
+```ts
+// vite.config.ts
+import {sveltekit} from '@sveltejs/kit/vite';
+import {vite_plugin_library_well_known} from '@ryanatkn/gro';
+
+export default {
+	plugins: [sveltekit(), vite_plugin_library_well_known()],
+};
 ```
 
 > [Windows will not be suported](https://github.com/fuzdev/fuz_template/issues/4) because
