@@ -9,7 +9,7 @@
 > [Vite](https://github.com/vitejs/vite),
 > [esbuild](https://github.com/evanw/esbuild),
 > [Gro](https://github.com/ryanatkn/gro),
-> and [Fuz UI](https://github.com/fuzdev/fuz_ui)
+> and [fuz_ui](https://github.com/fuzdev/fuz_ui)
 
 [**template.fuz.dev**](https://template.fuz.dev/)
 
@@ -17,8 +17,8 @@
 
 - [SvelteKit](https://github.com/sveltejs/kit) with [Svelte](https://github.com/sveltejs/svelte) and
   [Vite](https://github.com/vitejs/vite)
-- [Fuz CSS](https://github.com/fuzdev/fuz_css): CSS framework and design system based on style variables
-- [Fuz UI](https://github.com/fuzdev/fuz_ui):
+- [fuz_css](https://github.com/fuzdev/fuz_css): CSS framework and design system based on style variables
+- [fuz_ui](https://github.com/fuzdev/fuz_ui):
   - Svelte UI library - [ui.fuz.dev](https://ui.fuz.dev/)
   - is optional, to remove, `npm uninstall @fuzdev/fuz_ui` and delete the imports
 - [Gro](https://github.com/ryanatkn/gro):
@@ -63,7 +63,7 @@ gro sync # called by `gro dev`, refreshes generated files and calls `svelte-kit 
 
 > learn more about [SvelteKit](https://github.com/sveltejs/kit),
 > [Vite](https://github.com/vitejs/vite), [Gro](https://github.com/ryanatkn/gro),
-> and [Fuz UI](https://github.com/fuzdev/fuz_ui)
+> and [fuz_ui](https://github.com/fuzdev/fuz_ui)
 
 To publish `package.json` and a map of the `src/` directory
 to `.well-known/` in your build output, add the Vite plugin to your config.
@@ -150,7 +150,7 @@ gro deploy
 [TypeScript](https://github.com/microsoft/TypeScript) ∙
 [ESLint](https://github.com/eslint/eslint) ∙
 [Prettier](https://github.com/prettier/prettier) ∙
-[Fuz CSS](https://github.com/fuzdev/fuz_css) ∙
+[fuz_css](https://github.com/fuzdev/fuz_css) ∙
 [Fuz](https://github.com/fuzdev/fuz_ui) ∙
 [Gro](https://github.com/ryanatkn/gro) ∙
 [@fuzdev/fuz_util](https://github.com/fuzdev/fuz_util) ∙
