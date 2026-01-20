@@ -14,7 +14,7 @@
 	// TODO standardize
 </script>
 
-<main class="width_upto_md">
+<main class="width_atmost_md">
 	<section class="box">
 		<header class="box pt_xl">
 			<Svg data={logo_fuz} size="var(--icon_size_xl)" />
@@ -25,7 +25,7 @@
 		</div>
 	</section>
 	<!-- <section class="box width:100% mb_lg">
-		<div class="panel p_lg width_upto_md">
+		<div class="panel p_lg width_atmost_md">
 			<LibraryDetail {library} />
 		</div>
 	</section> -->
