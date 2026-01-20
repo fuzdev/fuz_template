@@ -21,9 +21,9 @@
 			<h1 class="mt_xl2">fuz_template</h1>
 		</header>
 		<div class="column gap_lg">
-			<a href={resolve('/about')} class="panel px_xl py_md font_size_xl2 text_align_center">about</a
+			<a href={resolve('/about')} class="panel px_xl py_md font_size_xl2 text-align:center">about</a
 			>
-			<a href={resolve('/docs')} class="panel px_xl py_md font_size_xl2 text_align_center">docs</a>
+			<a href={resolve('/docs')} class="panel px_xl py_md font_size_xl2 text-align:center">docs</a>
 		</div>
 	</section>
 	<section class="box panel">
