@@ -1,0 +1,1 @@
+const a=t=>{if(!t)return!1;const{tagName:e}=t;return e==="INPUT"&&t.type!=="hidden"||e==="TEXTAREA"||t.contentEditable==="true"||t.contentEditable===""},n=(t,e=!0,r=!0)=>(r&&t.preventDefault(),e?t.stopImmediatePropagation():t.stopPropagation(),t),i=()=>{if(typeof window>"u")return!1;try{return window.self!==window.top}catch{return!1}};export{a,i,n as s};
