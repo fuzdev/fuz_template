@@ -1,9 +1,11 @@
 import {vitePreprocess} from '@sveltejs/vite-plugin-svelte';
 import adapter from '@sveltejs/adapter-static';
+import {svelte_preprocess_mdz} from '@fuzdev/fuz_ui/svelte_preprocess_mdz.js';
+import {svelte_preprocess_fuz_code} from '@fuzdev/fuz_code/svelte_preprocess_fuz_code.js';
 
 /** @type {import('@sveltejs/kit').Config} */
 export default {
-	preprocess: [vitePreprocess()],
+	preprocess: [svelte_preprocess_mdz(), svelte_preprocess_fuz_code(), vitePreprocess()],
 	compilerOptions: {runes: true},
 	vitePlugin: {inspector: true},
 	kit: {
