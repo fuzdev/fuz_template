@@ -33,7 +33,7 @@ dev server.
 - fuz_ui (@fuzdev/fuz_ui) - UI components, theming, docs system
 - fuz_util (@fuzdev/fuz_util) - utility functions
 - fuz_code (@fuzdev/fuz_code) - syntax highlighting
-- Gro (@ryanatkn/gro) - build system and task runner
+- Gro (@fuzdev/gro) - build system and task runner
 
 ## Scope
 
