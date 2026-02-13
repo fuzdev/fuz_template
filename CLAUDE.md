@@ -7,7 +7,7 @@ building static web applications with the fuz stack. Clone it to start new
 projects with TypeScript, Svelte 5, SvelteKit, and the complete fuz ecosystem
 pre-configured.
 
-For coding conventions, see [`fuz-stack`](../fuz-stack/CLAUDE.md).
+For coding conventions, see Skill(fuz-stack).
 
 ## Gro commands
 
