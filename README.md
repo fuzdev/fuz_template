@@ -87,7 +87,7 @@ The template includes
 so it can [deploy](https://github.com/fuzdev/gro/blob/main/src/docs/deploy.md)
 with no further configuration.
 To learn how to swap it out for another deployment target, see
-[the SvelteKit adapter docs](https://kit.svelte.dev/docs#adapters).
+[the SvelteKit adapter docs](https://svelte.dev/docs/kit/adapters).
 
 To make it your own, change `@fuzdev/fuz_template` and `template.fuz.dev`
 to your project name in the following files:
