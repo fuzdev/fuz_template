@@ -16,10 +16,10 @@ export default {
 		// Example CSP using https://ui.fuz.dev/docs/csp
 		//
 		// import {create_csp_directives} from '@fuzdev/fuz_ui/csp.js';
-		// import {csp_trusted_sources_of_ryanatkn} from '@fuzdev/fuz_ui/csp_of_ryanatkn.js';
+		// import {csp_trusted_sources_of_fuzdev} from '@fuzdev/fuz_ui/csp_of_fuzdev.js';
 		// csp: {
 		// 	directives: create_csp_directives({
-		// 		trusted_sources: csp_trusted_sources_of_ryanatkn,
+		// 		trusted_sources: csp_trusted_sources_of_fuzdev,
 		// 	}),
 		// },
 	},
