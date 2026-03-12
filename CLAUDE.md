@@ -155,7 +155,7 @@ Uses contexts from fuz_ui:
 
 - `library_context` - provides `Library` class for docs
 - `tomes_context` - provides documentation structure
-- Theme context via `Themed` component wrapper
+- Theme context via `ThemeRoot` component wrapper
 
 ## Static deployment
 
