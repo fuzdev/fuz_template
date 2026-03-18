@@ -26,7 +26,7 @@
     "@fuzdev/fuz_css": "^0.57.0",
     "@fuzdev/fuz_ui": "^0.191.1",
     "@fuzdev/fuz_util": "^0.55.0",
-    "@fuzdev/gro": "^0.197.0",
+    "@fuzdev/gro": "^0.197.1",
     "@jridgewell/trace-mapping": "^0.3.31",
     "@ryanatkn/eslint-config": "^0.10.1",
     "@sveltejs/acorn-typescript": "^1.0.9",
