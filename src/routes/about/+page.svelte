@@ -14,7 +14,7 @@
 	// TODO standardize
 </script>
 
-<main class="width_atmost_md">
+<main class="width_atmost_md pb_xl9">
 	<section class="box">
 		<header class="box pt_xl">
 			<Svg data={logo_fuz} size="var(--icon_size_xl)" />
@@ -46,8 +46,5 @@
 		display: flex;
 		align-items: baseline;
 		text-align: center;
-	}
-	section {
-		margin-bottom: var(--space_xl5);
 	}
 </style>
