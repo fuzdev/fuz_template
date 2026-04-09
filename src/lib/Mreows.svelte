@@ -78,7 +78,7 @@
 		});
 	};
 
-	let clientWidth: number | undefined = $state();
+	let clientWidth: number | undefined = $state.raw();
 
 	const layout: Array<LayoutItem> = $derived(
 		clientWidth === undefined ? [] : create_layout(mreows.slice(1), clientWidth),

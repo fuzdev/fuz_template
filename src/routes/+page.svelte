@@ -8,7 +8,7 @@
 
 	import Mreows, {mreow_items} from '$lib/Mreows.svelte';
 
-	let mreows: Array<{glyph: string}> | undefined = $state([
+	let mreows: Array<{glyph: string}> | undefined = $state.raw([
 		random_item(mreow_items),
 		mreow_items[4]!,
 	]);

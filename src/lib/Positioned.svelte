@@ -15,7 +15,7 @@
 		children: Snippet;
 	} = $props();
 
-	let scale_ready = $state(false);
+	let scale_ready = $state.raw(false);
 	const final_scale = $derived(scale_ready ? scale : 0);
 
 	// TODO what's a better way to do this? problem is using Svelte's `in:scale`
