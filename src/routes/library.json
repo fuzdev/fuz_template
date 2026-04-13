@@ -36,7 +36,7 @@
 			"@fuzdev/fuz_code": "^0.45.1",
 			"@fuzdev/fuz_css": "^0.58.0",
 			"@fuzdev/fuz_ui": "^0.191.4",
-			"@fuzdev/fuz_util": "^0.55.0",
+			"@fuzdev/fuz_util": "^0.56.0",
 			"@fuzdev/gro": "^0.197.3",
 			"@jridgewell/trace-mapping": "^0.3.31",
 			"@ryanatkn/eslint-config": "^0.10.1",
