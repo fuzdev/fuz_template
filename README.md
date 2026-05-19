@@ -97,7 +97,7 @@ to your project name in the following files:
 - [`src/routes/+layout.svelte`](src/routes/+layout.svelte)
 - [`src/routes/+page.svelte`](src/routes/+page.svelte)
 - update or delete [`src/static/CNAME`](src/static/CNAME)
-  and [.github/FUNDING.yml](.github/FUNDING.yml)
+  and ./.github/FUNDING.yml
 
 Then run `npm i` to update `package-lock.json`.
 

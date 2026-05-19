@@ -30,16 +30,16 @@
 		},
 		"type": "module",
 		"engines": {
-			"node": ">=22.15"
+			"node": ">=24.14"
 		},
 		"devDependencies": {
 			"@fuzdev/fuz_code": "^0.45.1",
 			"@fuzdev/fuz_css": "^0.59.0",
-			"@fuzdev/fuz_ui": "^0.191.4",
-			"@fuzdev/fuz_util": "^0.57.0",
+			"@fuzdev/fuz_ui": "^0.192.0",
+			"@fuzdev/fuz_util": "^0.60.1",
 			"@fuzdev/gro": "^0.198.0",
 			"@jridgewell/trace-mapping": "^0.3.31",
-			"@ryanatkn/eslint-config": "^0.11.0",
+			"@ryanatkn/eslint-config": "^0.12.1",
 			"@sveltejs/acorn-typescript": "^1.0.9",
 			"@sveltejs/adapter-static": "^3.0.10",
 			"@sveltejs/kit": "^2.57.1",
