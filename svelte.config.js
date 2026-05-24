@@ -13,9 +13,7 @@ export default {
 		adapter: adapter(),
 		paths: {relative: false}, // use root-absolute paths for SSR path comparison: https://svelte.dev/docs/kit/configuration#paths
 		alias: {$routes: 'src/routes'},
-		version: {
-			name: execSync('git rev-parse HEAD').toString().trim(),
-		},
+		version: {name: execSync('git rev-parse HEAD').toString().trim()},
 
 		// Example CSP using https://ui.fuz.dev/docs/csp
 		//
