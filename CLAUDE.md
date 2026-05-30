@@ -20,7 +20,6 @@ this repo — make the edits and stop, the user commits.
 gro check     # typecheck, test, lint, format check (run before committing)
 gro typecheck # typecheck only (faster iteration)
 gro test      # run tests with vitest
-gro gen       # regenerate .gen files (library.json, fuz.css)
 gro build     # build for production (static adapter)
 gro deploy    # build, commit, and push to deploy branch
 gro sync      # regenerate files and run svelte-kit sync
@@ -90,10 +89,6 @@ src/
     ├── +layout.ts         # prerender: true, ssr: true
     ├── +page.svelte       # home page
     ├── style.css          # custom global styles
-    ├── fuz.css            # generated fuz_css styles
-    ├── library.gen.ts     # generates library.json
-    ├── library.ts         # exports library metadata
-    ├── library.json       # generated component metadata
     ├── example.test.ts    # test file example
     ├── about/+page.svelte
     └── docs/              # documentation pages
@@ -133,17 +128,20 @@ Replace these with your actual components.
 
 This prevents flash of wrong theme on page load.
 
-### Code generation
+### Library metadata
 
-**library.gen.ts** - generates component library metadata:
+Component library metadata (modules, declarations, props, dependencies) is
+provided at runtime by the `svelte-docinfo` Vite plugin via the
+`virtual:svelte-docinfo` module. The root `+layout.svelte` combines it with
+`package.json` through `library_json_parse` and sets the `library_context`,
+which powers auto-generated API docs at `/docs/api/`.
 
-- Outputs `library.json` (component metadata, props, dependencies) and
-  `library.ts` (typed wrapper)
-- Powers auto-generated API docs at `/docs/api/`
+### CSS utility classes
 
-**fuz.gen.css.ts** - generates fuz_css utility classes:
-
-- Outputs `fuz.css` with CSS custom properties and utility classes
+The `vite_plugin_fuz_css` Vite plugin (wired in `vite.config.ts`) generates
+fuz_css utility classes on demand and exposes them via the `virtual:fuz.css`
+module, imported in the root `+layout.svelte`. No generated `fuz.css` file is
+committed.
 
 ### Documentation system
 
@@ -151,7 +149,7 @@ Uses fuz_ui's tome system:
 
 - `docs/tomes.ts` - defines documentation pages
 - `docs/library/` - shows `LibraryDetail` component
-- `docs/api/` - auto-generated API docs from `library.json`
+- `docs/api/` - auto-generated API docs from `virtual:svelte-docinfo`
 - `docs/api/[...module_path]/` - dynamic module documentation
 
 ## Context system

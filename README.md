@@ -65,20 +65,6 @@ gro sync # called by `gro dev`, refreshes generated files and calls `svelte-kit 
 > [Vite](https://github.com/vitejs/vite), [Gro](https://github.com/fuzdev/gro),
 > and [fuz_ui](https://github.com/fuzdev/fuz_ui)
 
-To publish `package.json` and a map of the `src/` directory
-to `.well-known/` in your build output, add the Vite plugin to your config.
-This can leak sensitive information, so enable it only if you intend it to be public!
-
-```ts
-// vite.config.ts
-import {sveltekit} from '@sveltejs/kit/vite';
-import {vite_plugin_library_well_known} from '@fuzdev/gro';
-
-export default {
-	plugins: [sveltekit(), vite_plugin_library_well_known()],
-};
-```
-
 > [Windows will not be suported](https://github.com/fuzdev/fuz_template/issues/4) because
 > I chose Bash instead - Fuz recommends [WSL](https://docs.microsoft.com/en-us/windows/wsl/about)
 

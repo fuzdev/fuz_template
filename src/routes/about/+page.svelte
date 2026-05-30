@@ -1,15 +1,13 @@
 <script lang="ts">
 	// import LibraryDetail from '@fuzdev/fuz_ui/LibraryDetail.svelte';
-	import {Library, library_context} from '@fuzdev/fuz_ui/library.svelte.js';
+	import {library_context} from '@fuzdev/fuz_ui/library.svelte.js';
 	import DocsFooter from '@fuzdev/fuz_ui/DocsFooter.svelte';
 	import EcosystemLinksPanel from '@fuzdev/fuz_ui/EcosystemLinksPanel.svelte';
 	import Breadcrumb from '@fuzdev/fuz_ui/Breadcrumb.svelte';
 	import Svg from '@fuzdev/fuz_ui/Svg.svelte';
 	import {logo_fuz} from '@fuzdev/fuz_ui/logos.js';
 
-	import {library_json} from '$routes/library.ts';
-
-	const library = library_context.set(new Library(library_json));
+	const library = library_context.get();
 
 	// TODO standardize
 </script>
@@ -21,7 +19,7 @@
 			<h1 class="mt_xl2">fuz_template</h1>
 		</header>
 		<div style:--font_size="var(--font_size_xl)">
-			<Breadcrumb>{library_json.package_json.glyph}</Breadcrumb>
+			<Breadcrumb>{library.package_json.glyph}</Breadcrumb>
 		</div>
 	</section>
 	<!-- <section class="box width:100% mb_lg">
