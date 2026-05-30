@@ -132,9 +132,11 @@ This prevents flash of wrong theme on page load.
 
 Component library metadata (modules, declarations, props, dependencies) is
 provided at runtime by the `svelte-docinfo` Vite plugin via the
-`virtual:svelte-docinfo` module. The root `+layout.svelte` combines it with
-`package.json` through `library_json_parse` and sets the `library_context`,
-which powers auto-generated API docs at `/docs/api/`.
+`virtual:svelte-docinfo` module. `src/routes/library.ts` combines it with
+`package.json` through `library_json_from_modules`, and `docs/+layout.svelte`
+sets the `library_context` (only where the docs need it — the root layout sets
+just the lighter `site_context`), powering auto-generated API docs at
+`/docs/api/`.
 
 ### CSS utility classes
 
