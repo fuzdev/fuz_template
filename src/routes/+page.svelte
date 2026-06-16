@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Svg from '@fuzdev/fuz_ui/Svg.svelte';
-	import {logo_fuz} from '@fuzdev/fuz_ui/logos.js';
+	import {logo_fuz} from '@fuzdev/fuz_ui/logos.ts';
 	import {resolve} from '$app/paths';
-	import {random_item} from '@fuzdev/fuz_util/random.js';
+	import {random_item} from '@fuzdev/fuz_util/random.ts';
 	import ColorSchemeInput from '@fuzdev/fuz_ui/ColorSchemeInput.svelte';
 	import ThemeInput from '@fuzdev/fuz_ui/ThemeInput.svelte';
 
