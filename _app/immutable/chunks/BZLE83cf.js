@@ -1,0 +1,1 @@
+var e=(e,t=!0,n=!0)=>(n&&e.preventDefault(),t?e.stopImmediatePropagation():e.stopPropagation(),e),t=()=>{if(typeof window>`u`)return!1;try{return window.self!==window.top}catch{return!1}};export{e as n,t};

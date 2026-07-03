@@ -1,1 +1,0 @@
-const o=(r,t=!0,e=!0)=>(e&&r.preventDefault(),t?r.stopImmediatePropagation():r.stopPropagation(),r),a=()=>{if(typeof window>"u")return!1;try{return window.self!==window.top}catch{return!1}};export{a as i,o as s};

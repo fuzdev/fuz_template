@@ -1,0 +1,1 @@
+var e={name:`@fuzdev/fuz_template`,version:`0.0.1`,private:!0,description:`a static web app and Node library template with TypeScript, Svelte, SvelteKit, Vite, esbuild, Gro, and Fuz`,glyph:`❄`,logo:`logo.svg`,logo_alt:`a friendly pixelated spider facing you`,homepage:`https://template.fuz.dev/`,repository:`https://github.com/fuzdev/fuz_template`};export{e as t};
