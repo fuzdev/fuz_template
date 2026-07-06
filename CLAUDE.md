@@ -97,6 +97,11 @@ Key behaviors:
 
 - **Requires a git repo with a clean tree** (exit 2 otherwise; `--force`
   overrides dirty, nothing overrides no-git) so it's always undoable.
+  Applying to a dirty tree (only reachable via `--force`) always demands an
+  in-the-moment interactive confirmation — `--wetrun` alone never skips it,
+  and without a terminal the dirty apply is refused (exit 2). The only
+  ungated write path is `--wetrun` on a clean tree, where `git checkout` is
+  a full undo.
 - **Plan-then-apply**: every file edit is anchored on exact current content;
   one unmatched anchor aborts before any write. Non-interactive runs write
   nothing without `--wetrun`.

@@ -81,6 +81,37 @@ fn locate_root() -> Result<PathBuf, CliError> {
     }
 }
 
+/// What stands between a printed plan and applying it, given the run mode.
+///
+/// The one combination with no gate at all is `--wetrun` on a clean tree —
+/// there `git checkout` is always a full undo. A dirty tree (reachable only
+/// via `--force`) never applies without an in-the-moment confirmation, and
+/// without a terminal it never applies at all: "commit first" is always
+/// available, so an override flag would just recreate the hole.
+#[derive(Debug, PartialEq, Eq)]
+enum ApplyGate {
+    /// Apply without further confirmation (clean tree + `--wetrun`).
+    Apply,
+    /// Ask the standard confirm prompt.
+    Confirm,
+    /// Ask a scarier prompt: applying with no clean undo point.
+    ConfirmDirty,
+    /// Print the dry-run note and stop.
+    DryRun,
+    /// Refuse: destructive apply on a dirty tree needs a terminal (exit 2).
+    RefuseDirty,
+}
+
+const fn apply_gate(wetrun: bool, clean: bool, interactive: bool) -> ApplyGate {
+    match (wetrun, clean, interactive) {
+        (true, true, _) => ApplyGate::Apply,
+        (true, false, true) => ApplyGate::ConfirmDirty,
+        (true, false, false) => ApplyGate::RefuseDirty,
+        (false, _, true) => ApplyGate::Confirm,
+        (false, _, false) => ApplyGate::DryRun,
+    }
+}
+
 fn molt(top: &TopLevel, root: &Path) -> Result<ExitCode, CliError> {
     let interactive = wizard::interactive();
 
@@ -98,6 +129,14 @@ fn molt(top: &TopLevel, root: &Path) -> Result<ExitCode, CliError> {
             Some("commit or stash your changes, or pass --force to proceed anyway"),
         ));
     }
+    let gate = apply_gate(top.wetrun, clean, interactive);
+    if gate == ApplyGate::RefuseDirty {
+        // refuse before prompting/planning — this is an invocation problem
+        return Err(CliError::precondition(
+            "refusing to apply to a dirty git tree without a terminal — there would be no clean undo point",
+            Some("commit or stash first, or run interactively to confirm the dirty apply"),
+        ));
+    }
 
     let config = resolve_config(top, root, interactive)?;
     let plan = plan::build_plan(&config);
@@ -111,17 +150,28 @@ fn molt(top: &TopLevel, root: &Path) -> Result<ExitCode, CliError> {
         println!("  {}", action.describe());
     }
 
-    let apply_now = if top.wetrun {
-        true
-    } else if interactive {
-        println!();
-        wizard::prompt_bool(
-            "apply this plan? the template becomes your project and molt deletes itself",
-            false,
-        )?
-    } else {
-        println!("\ndry run — nothing written. pass --wetrun to apply.");
-        false
+    let apply_now = match gate {
+        ApplyGate::Apply => true,
+        ApplyGate::ConfirmDirty => {
+            println!();
+            wizard::prompt_bool(
+                "the git tree is DIRTY — apply anyway, with no clean undo point?",
+                false,
+            )?
+        }
+        ApplyGate::Confirm => {
+            println!();
+            wizard::prompt_bool(
+                "apply this plan? the template becomes your project and molt deletes itself",
+                false,
+            )?
+        }
+        ApplyGate::DryRun => {
+            println!("\ndry run — nothing written. pass --wetrun to apply.");
+            false
+        }
+        // handled above, before planning
+        ApplyGate::RefuseDirty => unreachable!(),
     };
     if !apply_now {
         return Ok(ExitCode::SUCCESS);
@@ -237,4 +287,24 @@ fn print_next_steps(config: &MoltConfig) {
     println!(
         "\nstatic/logo.svg and static/favicon.png still carry the template's spider — replace them when ready."
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn apply_gate_only_clean_wetrun_applies_ungated() {
+        assert_eq!(apply_gate(true, true, true), ApplyGate::Apply);
+        assert_eq!(apply_gate(true, true, false), ApplyGate::Apply);
+        // a dirty tree never applies without an in-the-moment confirmation
+        assert_eq!(apply_gate(true, false, true), ApplyGate::ConfirmDirty);
+        // ...and never at all without a terminal
+        assert_eq!(apply_gate(true, false, false), ApplyGate::RefuseDirty);
+        // without --wetrun nothing is written regardless
+        assert_eq!(apply_gate(false, true, true), ApplyGate::Confirm);
+        assert_eq!(apply_gate(false, false, true), ApplyGate::Confirm);
+        assert_eq!(apply_gate(false, true, false), ApplyGate::DryRun);
+        assert_eq!(apply_gate(false, false, false), ApplyGate::DryRun);
+    }
 }

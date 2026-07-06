@@ -105,9 +105,9 @@ and [`package.json` value](https://spdx.org/licenses/), like `"license": "MIT"`.
 
 ## molt
 
-The template doubles as a Rust workspace, and its one crate is `molt` — a
-one-shot wizard that transforms this clone into your own project, then deletes
-itself. Like a spider shedding its template skin. 🕷
+The template doubles as a Rust workspace, and `crates/fuz_template` is
+`molt` — a one-shot wizard that transforms this clone into your own project,
+then deletes itself. Like a spider shedding its template skin. 🕷
 
 ```bash
 cargo molt         # interactive wizard: prompts, prints the full plan, confirms
@@ -128,9 +128,11 @@ What it does, driven by your answers:
 - deletes its own crate
 
 It refuses to run without a clean git tree, so undo is always
-`git checkout .` away. Run with flags instead of prompts for non-interactive
-use (`cargo molt --help`); in that mode nothing is written without
-`--wetrun`.
+`git checkout .` away. `--force` lets a dirty tree through for _planning_,
+but applying to a dirty tree always requires an interactive confirmation —
+without a terminal it refuses (exit 2), because there'd be no clean undo
+point. Run with flags instead of prompts for non-interactive use
+(`cargo molt --help`); in that mode nothing is written without `--wetrun`.
 
 ## build
 
