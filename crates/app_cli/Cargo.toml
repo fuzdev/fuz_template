@@ -1,0 +1,14 @@
+[package]
+name = "app_cli"
+description = "a CLI scaffolded by fuz_template's molt"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+argh.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

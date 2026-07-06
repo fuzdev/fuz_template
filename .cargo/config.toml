@@ -1,0 +1,2 @@
+[alias]
+molt = "run --package fuz_template --"

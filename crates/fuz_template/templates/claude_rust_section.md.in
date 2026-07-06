@@ -1,0 +1,19 @@
+
+## Rust workspace
+
+The repo doubles as a Rust workspace: root `Cargo.toml` with the fuz
+ecosystem's canonical lints (`unsafe_code = "forbid"`, clippy
+pedantic/nursery at warn) and release profile, crates under `crates/`, and
+the toolchain pinned in `rust-toolchain.toml`. Do not use Gro for the Rust
+side — run cargo directly:
+
+```bash
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+cargo fmt --check
+```
+
+CI runs these in the `rust` job of `.github/workflows/check.yml`. Errors
+follow thiserror enums with `.exit_code()`/`.hint()` and
+`fn main() -> ExitCode`; exit codes: `0` success, `2` caller-must-fix,
+`1` everything else.

@@ -57,28 +57,100 @@ fuz_template is a **SvelteKit starter template**:
 
 ## Using the template
 
-Clone with degit or use GitHub's "Use this template" button:
+Use GitHub's "Use this template" button or clone directly:
 
 ```bash
-npx degit fuzdev/fuz_template myproject
+git clone https://github.com/fuzdev/fuz_template.git myproject
 cd myproject
 npm i
 ```
 
-**Files to customize:**
+Then transform it into your own project with molt (see below):
 
-- `package.json` - name, version, description, homepage, repository
-- `svelte.config.js` - update origin URL
-- `src/routes/+layout.svelte` - update `<title>`
+```bash
+cargo molt
+```
+
+**Files molt customizes (or do it by hand):**
+
+- `package.json` - name, description, homepage, repository, glyph/logo fields
+- `src/routes/+layout.svelte` - `<title>`, template logo
 - `src/routes/+page.svelte` - replace demo content
+- `src/routes/about/+page.svelte` - heading
 - `static/CNAME` - update or delete for your domain
-- `.github/FUNDING.yml` - update or delete
+- `.github/FUNDING.yml` and `.github/ISSUE_TEMPLATE/` - update or delete
+- `README.md` and `CLAUDE.md` - regenerate for the new project
+
+## molt (self-eject CLI)
+
+`crates/fuz_template` is molt — a one-shot wizard that personalizes the
+clone and then deletes itself (like create-react-app's eject, or a spider
+shedding its skin). Invoked via the cargo alias in `.cargo/config.toml`:
+
+```bash
+cargo molt         # interactive wizard: prompts, prints the plan, confirms
+cargo molt check   # verify molt's anchors still match the template
+cargo molt --help  # all flags, for non-interactive use
+```
+
+Key behaviors:
+
+- **Requires a git repo with a clean tree** (exit 2 otherwise; `--force`
+  overrides dirty, nothing overrides no-git) so it's always undoable.
+- **Plan-then-apply**: every file edit is anchored on exact current content;
+  one unmatched anchor aborts before any write. Non-interactive runs write
+  nothing without `--wetrun`.
+- **Feature registry**: every optional feature is a keep/strip choice —
+  `rust` (the whole workspace: `Cargo.toml`, `crates/`, `.cargo/`,
+  `rust-toolchain.toml`, `clippy.toml`, and the `rust` CI job), `cli` (the
+  starter crate `crates/app_cli`, renamed to `crates/{name}` with every
+  `app_cli` occurrence substituted), `docs` (`src/routes/docs/` +
+  `src/routes/library.ts` + the starter page's docs link), and
+  `github-extras` (FUNDING.yml + issue templates; the only default-strip).
+  One prompt each in the wizard, or `--keep`/`--strip` id lists
+  (comma-separated or repeated). Stripping `rust` cascades to `cli`. The
+  registry lives in `crates/fuz_template/src/features.rs` — new features are
+  one entry + a plan fragment there.
+- **Identity fields**: name (required), npm name, description, domain,
+  repo url — derived from the git origin when it isn't the template's.
+- **Self-verifying**: `cargo molt check` and the crate's tests verify every
+  anchor against the working tree, so a template edit that would break
+  ejection fails `cargo test` (and CI) at the same commit. When you edit an
+  anchored file, update `crates/fuz_template/src/anchors.rs` (and the
+  embedded templates in `crates/fuz_template/templates/`) in the same change.
+
+## Rust workspace
+
+The repo doubles as a Rust workspace following the fuz ecosystem's
+conventions: root `Cargo.toml` with the canonical lint block
+(`unsafe_code = "forbid"`, clippy pedantic/nursery at warn) and release
+profile, `clippy.toml` test allowances, and the toolchain pinned in
+`rust-toolchain.toml`. Do not use Gro for the Rust side — run cargo
+directly:
+
+```bash
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+cargo fmt --check
+```
+
+CI runs these in the `rust` job of `.github/workflows/check.yml`. Errors
+follow thiserror enums with `.exit_code()`/`.hint()` helpers and
+`fn main() -> ExitCode`; exit codes: `0` success, `2` caller-must-fix
+(usage, preconditions), `1` everything else. Arg parsing uses argh with an
+explicit `from_args` so usage errors exit `2`.
 
 ## Architecture
 
 ### Directory structure
 
 ```
+Cargo.toml                 # Rust workspace (lints, profile, deps)
+crates/
+├── app_cli/               # starter CLI crate — molt renames it to yours
+└── fuz_template/          # molt — the self-eject CLI (deletes itself)
+    ├── src/               # plan/verify/apply, wizard, features, anchors
+    └── templates/         # embedded output templates (*.in)
 src/
 ├── app.html               # HTML entry with theme detection
 ├── lib/                   # your library code
@@ -186,7 +258,8 @@ Deploy with `gro deploy` (builds and pushes to deploy branch).
 - TypeScript strict mode
 - Svelte 5 with runes API
 - Prettier with tabs, 100 char width
-- Node >= 22.15
+- Node >= 24.14
+- Rust pinned via `rust-toolchain.toml` (edition 2024)
 - Private package (not published to npm)
 
 ## Related projects
