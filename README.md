@@ -87,12 +87,13 @@ It renames the project, strips the demo components, and deletes itself — see
 Prefer to do it by hand (or skip installing Rust)? Change `@fuzdev/fuz_template`
 and `template.fuz.dev` to your project name in the following files:
 
-- [`package.json`](package.json)
+- [`package.json`](package.json) — also remove or replace the `glyph`,
+  `logo`, and `logo_alt` fields
 - [`src/routes/+layout.svelte`](src/routes/+layout.svelte)
 - [`src/routes/+page.svelte`](src/routes/+page.svelte)
 - [`src/routes/about/+page.svelte`](src/routes/about/+page.svelte)
-- update or delete [`static/CNAME`](static/CNAME)
-  and ./.github/FUNDING.yml
+- update or delete [`static/CNAME`](static/CNAME),
+  ./.github/FUNDING.yml, and ./.github/ISSUE_TEMPLATE/
 
 And to remove the Rust workspace, delete `Cargo.toml`, `Cargo.lock`, `crates/`,
 `.cargo/`, `rust-toolchain.toml`, `clippy.toml`, and the `rust` job in
@@ -124,7 +125,8 @@ What it does, driven by your answers:
   `cli` (the starter crate at [`crates/app_cli`](crates/app_cli), renamed to
   your project name), `docs` (the docs system), and `github-extras`
   (funding + issue templates) — via prompts or
-  `--keep`/`--strip` lists (e.g. `--strip rust` or `--keep github-extras --strip docs`)
+  `--keep`/`--strip` lists (e.g. `--strip rust` or `--keep github-extras --strip docs`);
+  stripping `cli` alone is rejected — a kept workspace needs a crate
 - deletes its own crate
 
 It refuses to run without a clean git tree, so undo is always

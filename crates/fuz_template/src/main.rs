@@ -85,7 +85,8 @@ fn locate_root() -> Result<PathBuf, CliError> {
 ///
 /// The one combination with no gate at all is `--wetrun` on a clean tree —
 /// there `git checkout` is always a full undo. A dirty tree (reachable only
-/// via `--force`) never applies without an in-the-moment confirmation, and
+/// via `--force`) never applies without the dirty-specific in-the-moment
+/// confirmation — on the `--wetrun` path and the wizard path alike — and
 /// without a terminal it never applies at all: "commit first" is always
 /// available, so an override flag would just recreate the hole.
 #[derive(Debug, PartialEq, Eq)]
@@ -105,9 +106,9 @@ enum ApplyGate {
 const fn apply_gate(wetrun: bool, clean: bool, interactive: bool) -> ApplyGate {
     match (wetrun, clean, interactive) {
         (true, true, _) => ApplyGate::Apply,
-        (true, false, true) => ApplyGate::ConfirmDirty,
+        (_, false, true) => ApplyGate::ConfirmDirty,
         (true, false, false) => ApplyGate::RefuseDirty,
-        (false, _, true) => ApplyGate::Confirm,
+        (false, true, true) => ApplyGate::Confirm,
         (false, _, false) => ApplyGate::DryRun,
     }
 }
@@ -252,6 +253,24 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
         }
         features::cascade(&mut kept);
     }
+    // a kept rust workspace with no member crates can't build — repair the
+    // wizard case (both choices came from prompts), reject explicit flags
+    if interactive
+        && features::rust_without_crates(&kept)
+        && !explicit.contains(features::RUST)
+        && !explicit.contains(features::CLI)
+    {
+        println!(
+            "note: declining the starter crate leaves the Rust workspace empty — stripping rust too"
+        );
+        kept.remove(features::RUST);
+        features::cascade(&mut kept);
+    }
+    if features::rust_without_crates(&kept) {
+        return Err(CliError::Usage(
+            "a kept Rust workspace would have no crates (cargo rejects an empty workspace) — keep cli, or strip rust too".to_owned(),
+        ));
+    }
 
     Ok(MoltConfig {
         name,
@@ -297,13 +316,15 @@ mod tests {
     fn apply_gate_only_clean_wetrun_applies_ungated() {
         assert_eq!(apply_gate(true, true, true), ApplyGate::Apply);
         assert_eq!(apply_gate(true, true, false), ApplyGate::Apply);
-        // a dirty tree never applies without an in-the-moment confirmation
+        // a dirty tree never applies without the dirty-specific confirmation
+        // (the wizard's confirm can apply too, so it gets the same warning)
         assert_eq!(apply_gate(true, false, true), ApplyGate::ConfirmDirty);
+        assert_eq!(apply_gate(false, false, true), ApplyGate::ConfirmDirty);
         // ...and never at all without a terminal
         assert_eq!(apply_gate(true, false, false), ApplyGate::RefuseDirty);
-        // without --wetrun nothing is written regardless
+        // a clean interactive run confirms; non-interactive without --wetrun
+        // never writes
         assert_eq!(apply_gate(false, true, true), ApplyGate::Confirm);
-        assert_eq!(apply_gate(false, false, true), ApplyGate::Confirm);
         assert_eq!(apply_gate(false, true, false), ApplyGate::DryRun);
         assert_eq!(apply_gate(false, false, false), ApplyGate::DryRun);
     }

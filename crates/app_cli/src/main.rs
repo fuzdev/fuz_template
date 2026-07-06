@@ -1,5 +1,4 @@
-//! The starter CLI: replace this with your program. molt renames the crate
-//! (and every `app_cli` occurrence) to your project name.
+//! The starter CLI: replace this with your program.
 
 mod error;
 

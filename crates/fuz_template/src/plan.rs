@@ -258,13 +258,11 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
         });
     }
 
-    // the Rust workspace, and molt's own crate
+    // the Rust workspace, and molt's own crate; `cli` is always kept here —
+    // `resolve_config` rejects a kept `rust` with no member crates, since
+    // cargo refuses to load an empty workspace
     if config.keeps(features::RUST) {
-        let members = if config.keeps(features::CLI) {
-            format!("\"crates/{name}\"")
-        } else {
-            String::new()
-        };
+        let members = format!("\"crates/{name}\"");
         plan.push(Action::ReplaceFile {
             path: PathBuf::from("Cargo.toml"),
             anchors: vec![anchors::WORKSPACE_MEMBERS.to_owned()],
@@ -274,39 +272,33 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
             ),
             label: "workspace without molt's crate".to_owned(),
         });
-        if config.keeps(features::CLI) {
-            let description_replacement = if config.description.is_empty() {
-                String::new()
-            } else {
-                format!("description = \"{}\"\n", json_escape(&config.description))
-            };
-            plan.push(replace_once(
-                "crates/app_cli/Cargo.toml",
-                anchors::APP_CLI_DESCRIPTION,
-                description_replacement,
-                "description",
-            ));
-            for path in [
-                "crates/app_cli/Cargo.toml",
-                "crates/app_cli/src/main.rs",
-                "crates/app_cli/src/error.rs",
-            ] {
-                plan.push(Action::ReplaceAll {
-                    path: PathBuf::from(path),
-                    from: anchors::APP_CLI_TOKEN.to_owned(),
-                    to: name.to_owned(),
-                    label: format!("{} \u{2192} {name}", anchors::APP_CLI_TOKEN),
-                });
-            }
-            plan.push(Action::RenameDir {
-                from: PathBuf::from("crates/app_cli"),
-                to: PathBuf::from(format!("crates/{name}")),
-            });
+        let description_replacement = if config.description.is_empty() {
+            String::new()
         } else {
-            plan.push(Action::DeleteDir {
-                path: PathBuf::from("crates/app_cli"),
+            format!("description = \"{}\"\n", json_escape(&config.description))
+        };
+        plan.push(replace_once(
+            "crates/app_cli/Cargo.toml",
+            anchors::APP_CLI_DESCRIPTION,
+            description_replacement,
+            "description",
+        ));
+        for path in [
+            "crates/app_cli/Cargo.toml",
+            "crates/app_cli/src/main.rs",
+            "crates/app_cli/src/error.rs",
+        ] {
+            plan.push(Action::ReplaceAll {
+                path: PathBuf::from(path),
+                from: anchors::APP_CLI_TOKEN.to_owned(),
+                to: name.to_owned(),
+                label: format!("{} \u{2192} {name}", anchors::APP_CLI_TOKEN),
             });
         }
+        plan.push(Action::RenameDir {
+            from: PathBuf::from("crates/app_cli"),
+            to: PathBuf::from(format!("crates/{name}")),
+        });
         plan.push(Action::DeleteDir {
             path: PathBuf::from("crates/fuz_template"),
         });

@@ -77,9 +77,14 @@ cargo molt
 - `src/routes/+layout.svelte` - `<title>`, template logo
 - `src/routes/+page.svelte` - replace demo content
 - `src/routes/about/+page.svelte` - heading
+- `src/lib/Mreows.svelte` and `src/lib/Positioned.svelte` - deleted (demo components)
 - `static/CNAME` - update or delete for your domain
 - `.github/FUNDING.yml` and `.github/ISSUE_TEMPLATE/` - update or delete
 - `README.md` and `CLAUDE.md` - regenerate for the new project
+
+Not customized: `static/logo.svg` and `static/favicon.png` keep the template's
+spider (molt prints a reminder), and `package-lock.json` keeps the old name
+until you run `npm i`.
 
 ## molt (self-eject CLI)
 
@@ -97,32 +102,38 @@ Key behaviors:
 
 - **Requires a git repo with a clean tree** (exit 2 otherwise; `--force`
   overrides dirty, nothing overrides no-git) so it's always undoable.
-  Applying to a dirty tree (only reachable via `--force`) always demands an
-  in-the-moment interactive confirmation — `--wetrun` alone never skips it,
-  and without a terminal the dirty apply is refused (exit 2). The only
-  ungated write path is `--wetrun` on a clean tree, where `git checkout` is
-  a full undo.
+  Applying to a dirty tree (only reachable via `--force`) always demands the
+  dirty-specific in-the-moment confirmation — on the `--wetrun` path and the
+  wizard path alike; `--wetrun` alone never skips it, and without a terminal
+  the dirty apply is refused (exit 2). The only ungated write path is
+  `--wetrun` on a clean tree, where `git checkout` is a full undo.
 - **Plan-then-apply**: every file edit is anchored on exact current content;
   one unmatched anchor aborts before any write. Non-interactive runs write
   nothing without `--wetrun`.
 - **Feature registry**: every optional feature is a keep/strip choice —
-  `rust` (the whole workspace: `Cargo.toml`, `crates/`, `.cargo/`,
+  `rust` (the whole workspace: `Cargo.toml`, `Cargo.lock`, `crates/`,
   `rust-toolchain.toml`, `clippy.toml`, and the `rust` CI job), `cli` (the
   starter crate `crates/app_cli`, renamed to `crates/{name}` with every
   `app_cli` occurrence substituted), `docs` (`src/routes/docs/` +
   `src/routes/library.ts` + the starter page's docs link), and
   `github-extras` (FUNDING.yml + issue templates; the only default-strip).
   One prompt each in the wizard, or `--keep`/`--strip` id lists
-  (comma-separated or repeated). Stripping `rust` cascades to `cli`. The
-  registry lives in `crates/fuz_template/src/features.rs` — new features are
-  one entry + a plan fragment there.
+  (comma-separated or repeated). Stripping `rust` cascades to `cli`;
+  stripping `cli` while keeping `rust` is rejected (cargo can't load an
+  empty workspace) — declining the starter crate in the wizard strips
+  `rust` too, with a printed note. `.cargo/` (which holds only the
+  `cargo molt` alias) is deleted unconditionally. The registry lives in
+  `crates/fuz_template/src/features.rs` — new features are one entry + a
+  plan fragment there.
 - **Identity fields**: name (required), npm name, description, domain,
   repo url — derived from the git origin when it isn't the template's.
 - **Self-verifying**: `cargo molt check` and the crate's tests verify every
-  anchor against the working tree, so a template edit that would break
-  ejection fails `cargo test` (and CI) at the same commit. When you edit an
-  anchored file, update `crates/fuz_template/src/anchors.rs` (and the
-  embedded templates in `crates/fuz_template/templates/`) in the same change.
+  anchor against the working tree — and that the embedded workspace manifest
+  template stays byte-identical to the live root `Cargo.toml` apart from the
+  members line — so a template edit that would break ejection fails
+  `cargo test` (and CI) at the same commit. When you edit an anchored file,
+  update `crates/fuz_template/src/anchors.rs` (and the embedded templates in
+  `crates/fuz_template/templates/`) in the same change.
 
 ## Rust workspace
 
@@ -191,8 +202,8 @@ Replace these with your actual components.
 
 - `+layout.ts` exports `prerender = true` and `ssr = true` for full static
   generation
-- `svelte.config.js` enables runes mode and configures CSP via
-  `create_csp_directives()` from fuz_ui
+- `svelte.config.js` enables runes mode and includes a commented-out example
+  CSP config using `create_csp_directives()` from fuz_ui
 - Uses `@sveltejs/adapter-static` for static output
 
 ### Theme detection

@@ -130,6 +130,16 @@ pub fn cascade(kept: &mut BTreeSet<&'static str>) {
     }
 }
 
+/// Features that contribute workspace member crates. A kept `rust` needs at
+/// least one — cargo refuses to load a virtual manifest with no members.
+const CRATE_FEATURES: [&str; 1] = [CLI];
+
+/// Whether `kept` keeps the Rust workspace with no member crates — an invalid
+/// combination the caller must reject (or repair by stripping `rust` too).
+pub fn rust_without_crates(kept: &BTreeSet<&'static str>) -> bool {
+    kept.contains(RUST) && !CRATE_FEATURES.iter().any(|id| kept.contains(id))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -166,5 +176,17 @@ mod tests {
         assert!(resolve(&strings(&["rust"]), &strings(&["rust"])).is_err());
         assert!(resolve(&strings(&["cli"]), &strings(&["rust"])).is_err());
         assert!(resolve(&strings(&["nope"]), &[]).is_err());
+    }
+
+    #[test]
+    fn rust_without_crates_detection() {
+        let (kept, _) = resolve(&[], &[]).unwrap();
+        assert!(!rust_without_crates(&kept));
+        let (kept, _) = resolve(&[], &strings(&["rust"])).unwrap();
+        assert!(!rust_without_crates(&kept));
+        // stripping the last crate feature while keeping rust is the invalid
+        // combination `resolve_config` rejects
+        let (kept, _) = resolve(&[], &strings(&["cli"])).unwrap();
+        assert!(rust_without_crates(&kept));
     }
 }
