@@ -24,6 +24,18 @@ pub const LAYOUT_TITLE: &str = "<title>@fuzdev/fuz_template</title>";
 pub const PAGE_MREOWS_IMPORT: &str = "import Mreows, {mreow_items} from '$lib/Mreows.svelte';";
 pub const H1_FUZ_TEMPLATE: &str = "<h1 class=\"mt_xl2\">fuz_template</h1>";
 
+// the docs system's tooling, stripped with the `docs` feature
+pub const PACKAGE_JSON_SVELTE_DOCINFO: &str = "    \"svelte-docinfo\": \"^0.5.3\",\n";
+pub const VITE_DOCINFO_IMPORT: &str = "import svelte_docinfo from 'svelte-docinfo/vite.js';\n";
+pub const VITE_DOCINFO_PLUGIN: &str = "svelte_docinfo(), ";
+pub const APP_D_TS_DOCINFO: &str = "// Registers ambient types for the `virtual:svelte-docinfo` module (Vite plugin).\n// eslint-disable-next-line @typescript-eslint/triple-slash-reference\n/// <reference types=\"svelte-docinfo/virtual-svelte-docinfo.js\" />\n";
+
+// the github extras, personalized when kept
+pub const FUNDING_GITHUB: &str = "github: ryanatkn";
+/// The template's repo url as it appears in the issue-template discussion
+/// links — replaced with the molted project's repo url when derivable.
+pub const TEMPLATE_REPO_URL: &str = "https://github.com/fuzdev/fuz_template";
+
 pub const README_H1: &str = "# @fuzdev/fuz_template \u{2744}";
 pub const CLAUDE_H1: &str = "# fuz_template\n";
 pub const CNAME_CONTENT: &str = "template.fuz.dev";
@@ -39,6 +51,8 @@ pub const APP_CLI_DESCRIPTION: &str = "description = \"a CLI scaffolded by fuz_t
 /// exact-match anchor so stripping the `rust` feature can remove it.
 pub const CI_RUST_JOB: &str = r"
   rust:
+    # molt anchors this job (crates/fuz_template/src/anchors.rs) so stripping
+    # the rust feature can remove it — update the anchor when editing.
     runs-on: ubuntu-latest
     timeout-minutes: 15
 

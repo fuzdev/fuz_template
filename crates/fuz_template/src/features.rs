@@ -3,7 +3,8 @@
 //! Every molt-selectable feature is one entry here: a wizard prompt, a
 //! `--keep`/`--strip` id, and a plan fragment in `plan.rs` keyed off the
 //! resolved set. Adding a feature means adding a registry entry, its plan
-//! fragment, and covering its anchors in `check.rs`'s sample configs.
+//! fragment, and covering its anchors in `check.rs`'s sample configs — and
+//! joining `CRATE_FEATURES` if it contributes a workspace member crate.
 
 use std::collections::BTreeSet;
 

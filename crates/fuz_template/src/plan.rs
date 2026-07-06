@@ -191,7 +191,7 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
         path: PathBuf::from("src/lib/Positioned.svelte"),
     });
 
-    // docs system
+    // docs system, and the svelte-docinfo tooling that exists only for it
     if !config.keeps(features::DOCS) {
         plan.push(Action::DeleteDir {
             path: PathBuf::from("src/routes/docs"),
@@ -199,6 +199,30 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
         plan.push(Action::DeleteFile {
             path: PathBuf::from("src/routes/library.ts"),
         });
+        plan.push(replace_once(
+            "package.json",
+            anchors::PACKAGE_JSON_SVELTE_DOCINFO,
+            String::new(),
+            "remove the svelte-docinfo devDependency",
+        ));
+        plan.push(replace_once(
+            "vite.config.ts",
+            anchors::VITE_DOCINFO_IMPORT,
+            String::new(),
+            "remove the svelte-docinfo import",
+        ));
+        plan.push(replace_once(
+            "vite.config.ts",
+            anchors::VITE_DOCINFO_PLUGIN,
+            String::new(),
+            "remove the svelte-docinfo plugin",
+        ));
+        plan.push(replace_once(
+            "src/app.d.ts",
+            anchors::APP_D_TS_DOCINFO,
+            String::new(),
+            "remove the svelte-docinfo ambient types",
+        ));
     }
 
     // regenerated docs
@@ -248,8 +272,29 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
         label: "regenerate for the new project (AGENTS.md symlinks here)".to_owned(),
     });
 
-    // .github extras
-    if !config.keeps(features::GITHUB_EXTRAS) {
+    // .github extras: personalized when kept (the template's funding handles
+    // and discussion links must never ship in someone else's project)
+    if config.keeps(features::GITHUB_EXTRAS) {
+        plan.push(Action::ReplaceFile {
+            path: PathBuf::from(".github/FUNDING.yml"),
+            anchors: vec![anchors::FUNDING_GITHUB.to_owned()],
+            content: templates::FUNDING_YML.to_owned(),
+            label: "funding placeholders (fill in or delete)".to_owned(),
+        });
+        if let Some(repo_url) = &config.repo_url {
+            for path in [
+                ".github/ISSUE_TEMPLATE/config.yml",
+                ".github/ISSUE_TEMPLATE/preapproved.md",
+            ] {
+                plan.push(Action::ReplaceAll {
+                    path: PathBuf::from(path),
+                    from: anchors::TEMPLATE_REPO_URL.to_owned(),
+                    to: repo_url.clone(),
+                    label: format!("discussions url \u{2192} {repo_url}"),
+                });
+            }
+        }
+    } else {
         plan.push(Action::DeleteFile {
             path: PathBuf::from(".github/FUNDING.yml"),
         });

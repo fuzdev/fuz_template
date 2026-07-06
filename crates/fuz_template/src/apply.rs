@@ -84,6 +84,7 @@ mod tests {
             "package.json",
             "README.md",
             "CLAUDE.md",
+            "vite.config.ts",
             "Cargo.toml",
             "Cargo.lock",
             "rust-toolchain.toml",
@@ -162,9 +163,23 @@ mod tests {
         assert!(claude.contains("## Rust workspace"));
         assert!(claude.contains("src/routes/docs"));
 
-        assert!(!dir.join(".github/FUNDING.yml").exists());
-        assert!(!dir.join(".github/ISSUE_TEMPLATE").exists());
+        // github-extras kept: personalized, never the template author's links
+        let funding = read(&dir, ".github/FUNDING.yml");
+        assert!(!funding.contains("ryanatkn"));
+        assert!(funding.contains("your-github-username"));
+        let issue_config = read(&dir, ".github/ISSUE_TEMPLATE/config.yml");
+        assert!(
+            issue_config.contains("https://github.com/sample/sample_app/discussions/new/choose")
+        );
+        assert!(!issue_config.contains("fuzdev/fuz_template"));
+        assert!(
+            !read(&dir, ".github/ISSUE_TEMPLATE/preapproved.md").contains("fuzdev/fuz_template")
+        );
         assert!(read(&dir, ".github/workflows/check.yml").contains("cargo clippy"));
+
+        // docs kept: the svelte-docinfo tooling stays
+        assert!(package_json.contains("svelte-docinfo"));
+        assert!(read(&dir, "vite.config.ts").contains("svelte_docinfo()"));
 
         let workspace = read(&dir, "Cargo.toml");
         assert!(workspace.contains("members = [\"crates/sample_app\"]"));
@@ -210,15 +225,19 @@ mod tests {
         assert!(!workflow.contains("cargo"));
         assert!(workflow.contains("npx @fuzdev/gro check"));
 
-        // docs stripped
+        // docs stripped, along with the svelte-docinfo tooling
         assert!(!dir.join("src/routes/docs").exists());
         assert!(!dir.join("src/routes/library.ts").exists());
         let page = read(&dir, "src/routes/+page.svelte");
         assert!(!page.contains("resolve('/docs')"));
         assert!(page.contains("resolve('/about')"));
+        assert!(!package_json.contains("svelte-docinfo"));
+        assert!(!read(&dir, "vite.config.ts").contains("svelte_docinfo"));
+        assert!(!read(&dir, "src/app.d.ts").contains("svelte-docinfo"));
 
-        // extras kept in this sample
-        assert!(dir.join(".github/FUNDING.yml").exists());
+        // extras stripped in this sample
+        assert!(!dir.join(".github/FUNDING.yml").exists());
+        assert!(!dir.join(".github/ISSUE_TEMPLATE").exists());
 
         let claude = read(&dir, "CLAUDE.md");
         assert!(!read(&dir, "README.md").contains("## rust"));

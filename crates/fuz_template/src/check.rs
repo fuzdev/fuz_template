@@ -10,14 +10,17 @@ use crate::features;
 use crate::plan::{build_plan, verify};
 use crate::templates;
 
-/// Runs `molt check`: verifies every anchor against the tree at `root`.
+/// Runs `molt check`: verifies every anchor and embedded-template invariant
+/// against the tree at `root`.
 pub fn run(root: &Path) -> Result<ExitCode, CliError> {
     let issues = check_all(root)?;
     if issues.is_empty() {
-        println!("molt check passed: all anchors match the template");
+        println!("molt check passed: all anchors and embedded templates match");
         Ok(ExitCode::SUCCESS)
     } else {
-        eprintln!("molt check failed — the template drifted from molt's anchors:");
+        eprintln!(
+            "molt check failed — the template drifted from molt's anchors or embedded templates:"
+        );
         for issue in &issues {
             eprintln!("  {issue}");
         }
@@ -56,9 +59,9 @@ pub fn check_all(root: &Path) -> Result<Vec<String>, CliError> {
     Ok(issues)
 }
 
-/// Two configs that together exercise every plan branch: one keeps
-/// rust/cli/docs and sets every optional value, one strips them and clears
-/// the optional values (while keeping the github extras).
+/// Two configs that together exercise every plan branch: one keeps every
+/// feature and sets every optional value, one strips every feature and
+/// clears the optional values.
 pub fn sample_configs() -> [MoltConfig; 2] {
     [
         MoltConfig {
@@ -67,7 +70,12 @@ pub fn sample_configs() -> [MoltConfig; 2] {
             description: "a sample app".to_owned(),
             domain: Some("sample.example.com".to_owned()),
             repo_url: Some("https://github.com/sample/sample_app".to_owned()),
-            kept: BTreeSet::from([features::RUST, features::CLI, features::DOCS]),
+            kept: BTreeSet::from([
+                features::RUST,
+                features::CLI,
+                features::DOCS,
+                features::GITHUB_EXTRAS,
+            ]),
         },
         MoltConfig {
             name: "plain_app".to_owned(),
@@ -75,7 +83,7 @@ pub fn sample_configs() -> [MoltConfig; 2] {
             description: String::new(),
             domain: None,
             repo_url: None,
-            kept: BTreeSet::from([features::GITHUB_EXTRAS]),
+            kept: BTreeSet::new(),
         },
     ]
 }

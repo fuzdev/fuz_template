@@ -54,7 +54,8 @@ pub enum Subcommand {
     Check(CheckCommand),
 }
 
-/// Verify molt's file anchors still match the template (used by CI and tests).
+/// Verify molt's anchors and embedded templates still match the template
+/// (used by CI and tests).
 #[derive(FromArgs, Debug)]
 #[argh(subcommand, name = "check")]
 pub struct CheckCommand {}

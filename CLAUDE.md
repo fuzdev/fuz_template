@@ -115,8 +115,11 @@ Key behaviors:
   `rust-toolchain.toml`, `clippy.toml`, and the `rust` CI job), `cli` (the
   starter crate `crates/app_cli`, renamed to `crates/{name}` with every
   `app_cli` occurrence substituted), `docs` (`src/routes/docs/` +
-  `src/routes/library.ts` + the starter page's docs link), and
-  `github-extras` (FUNDING.yml + issue templates; the only default-strip).
+  `src/routes/library.ts` + the starter page's docs link + the
+  svelte-docinfo tooling: devDependency, Vite plugin, ambient types), and
+  `github-extras` (FUNDING.yml + issue templates; the only default-strip —
+  kept copies are personalized with funding placeholders and discussion
+  links pointed at your repo url).
   One prompt each in the wizard, or `--keep`/`--strip` id lists
   (comma-separated or repeated). Stripping `rust` cascades to `cli`;
   stripping `cli` while keeping `rust` is rejected (cargo can't load an
@@ -153,8 +156,8 @@ cargo fmt --check
 CI runs these in the `rust` job of `.github/workflows/check.yml`. Errors
 follow thiserror enums with `.exit_code()`/`.hint()` helpers and
 `fn main() -> ExitCode`; exit codes: `0` success, `2` caller-must-fix
-(usage, preconditions), `1` everything else. Arg parsing uses argh with an
-explicit `from_args` so usage errors exit `2`.
+(usage, preconditions, anchor drift), `1` everything else. Arg parsing uses
+argh with an explicit `from_args` so usage errors exit `2`.
 
 ## Architecture
 

@@ -64,7 +64,7 @@ gro sync # called by `gro dev`, refreshes generated files and calls `svelte-kit 
 > [Vite](https://github.com/vitejs/vite), [Gro](https://github.com/fuzdev/gro),
 > and [fuz_ui](https://github.com/fuzdev/fuz_ui)
 
-> [Windows will not be suported](https://github.com/fuzdev/fuz_template/issues/4) because
+> [Windows will not be supported](https://github.com/fuzdev/fuz_template/issues/4) because
 > I chose Bash instead - Fuz recommends [WSL](https://docs.microsoft.com/en-us/windows/wsl/about)
 
 The template includes
@@ -124,7 +124,7 @@ What it does, driven by your answers:
 - keeps or strips each optional feature — `rust` (the whole workspace),
   `cli` (the starter crate at [`crates/app_cli`](crates/app_cli), renamed to
   your project name), `docs` (the docs system), and `github-extras`
-  (funding + issue templates) — via prompts or
+  (funding + issue templates, personalized when kept) — via prompts or
   `--keep`/`--strip` lists (e.g. `--strip rust` or `--keep github-extras --strip docs`);
   stripping `cli` alone is rejected — a kept workspace needs a crate
 - deletes its own crate

@@ -26,6 +26,16 @@
 			<a href={resolve('/docs')} class="panel px_xl py_md font_size_xl2 text-align:center">docs</a>
 		</div>
 	</section>
+	<!-- this section self-removes on eject: molt replaces this whole page -->
+	<section class="box panel p_lg width_atmost_sm">
+		<p>
+			This is the deployed demo of
+			<a href="https://github.com/fuzdev/fuz_template">fuz_template</a>, a starter for building apps
+			with the <a href="https://www.fuz.dev/">fuz stack</a>. Clone it (or use GitHub's "Use this
+			template"), then run <code>cargo molt</code> to make it yours — the readme also covers a manual
+			path that skips Rust.
+		</p>
+	</section>
 	<section class="box panel">
 		<div class="p_xl box">
 			<h2 class="mt_0">color scheme</h2>

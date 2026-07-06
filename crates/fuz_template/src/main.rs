@@ -185,22 +185,30 @@ fn molt(top: &TopLevel, root: &Path) -> Result<ExitCode, CliError> {
 
 fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<MoltConfig, CliError> {
     let name = match &top.name {
-        Some(name) => name.clone(),
-        None if interactive => wizard::prompt("project name (snake_case)", None)?,
+        Some(name) => {
+            config::validate_name(name)?;
+            name.clone()
+        }
+        None if interactive => {
+            wizard::prompt_validated("project name (snake_case)", None, config::validate_name)?
+        }
         None => {
             return Err(CliError::Usage(
                 "--name is required when not running interactively".to_owned(),
             ));
         }
     };
-    config::validate_name(&name)?;
 
     let npm_name = match &top.npm_name {
-        Some(npm_name) => npm_name.clone(),
-        None if interactive => wizard::prompt("npm package name", Some(&name))?,
+        Some(npm_name) => {
+            config::validate_npm_name(npm_name)?;
+            npm_name.clone()
+        }
+        None if interactive => {
+            wizard::prompt_validated("npm package name", Some(&name), config::validate_npm_name)?
+        }
         None => name.clone(),
     };
-    config::validate_npm_name(&npm_name)?;
 
     let description = match &top.description {
         Some(description) => description.clone(),
@@ -209,16 +217,27 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
     };
 
     let domain = match &top.domain {
-        Some(domain) => non_empty(domain),
-        None if interactive => non_empty(&wizard::prompt(
+        Some(domain) => {
+            let domain = non_empty(domain);
+            if let Some(domain) = &domain {
+                config::validate_domain(domain)?;
+            }
+            domain
+        }
+        None if interactive => non_empty(&wizard::prompt_validated(
             "custom domain like example.com (optional; sets CNAME + homepage)",
             Some(""),
+            |value| {
+                let trimmed = value.trim();
+                if trimmed.is_empty() {
+                    Ok(())
+                } else {
+                    config::validate_domain(trimmed)
+                }
+            },
         )?),
         None => None,
     };
-    if let Some(domain) = &domain {
-        config::validate_domain(domain)?;
-    }
 
     let derived_repo = git::output(root, &["remote", "get-url", "origin"])?
         .and_then(|url| git::normalize_remote_url(&url));
@@ -306,6 +325,17 @@ fn print_next_steps(config: &MoltConfig) {
     println!(
         "\nstatic/logo.svg and static/favicon.png still carry the template's spider — replace them when ready."
     );
+    if config.keeps(features::GITHUB_EXTRAS) {
+        if config.repo_url.is_some() {
+            println!(
+                ".github/FUNDING.yml now holds placeholder funding links — fill in or delete."
+            );
+        } else {
+            println!(
+                ".github/FUNDING.yml now holds placeholder funding links, and the issue-template discussion links still point at the template (no repo url to derive) — update or delete them."
+            );
+        }
+    }
 }
 
 #[cfg(test)]
