@@ -78,6 +78,8 @@ cargo molt
 - `src/routes/+page.svelte` - replace demo content
 - `src/routes/about/+page.svelte` - heading
 - `src/lib/Mreows.svelte` and `src/lib/Positioned.svelte` - deleted (demo components)
+- `LICENSE` and the `license` fields - deleted (the MIT license is the
+  template's; your project chooses its own)
 - `static/CNAME` - update or delete for your domain
 - `.github/FUNDING.yml` and `.github/ISSUE_TEMPLATE/` - update or delete
 - `README.md` and `CLAUDE.md` - regenerate for the new project
@@ -101,14 +103,17 @@ cargo molt --help  # all flags, for non-interactive use
 Key behaviors:
 
 - **Requires a git repo with a clean tree** (exit 2 otherwise; `--force`
-  overrides dirty, nothing overrides no-git) so it's always undoable.
+  overrides dirty, nothing overrides no-git); an applied plan is undone with
+  `git reset --hard && git clean -fd` (the tree was clean, so `git clean`
+  removes only files molt created).
   Applying to a dirty tree (only reachable via `--force`) always demands the
   dirty-specific in-the-moment confirmation — on the `--wetrun` path and the
   wizard path alike; `--wetrun` alone never skips it, and without a terminal
   the dirty apply is refused (exit 2). The only ungated write path is
-  `--wetrun` on a clean tree, where `git checkout` is a full undo.
+  `--wetrun` on a clean tree.
 - **Plan-then-apply**: every file edit is anchored on exact current content;
-  one unmatched anchor aborts before any write. Non-interactive runs write
+  one unmatched anchor aborts before any write, and anchors re-verify after
+  a confirm prompt, immediately before writing. Non-interactive runs write
   nothing without `--wetrun`.
 - **Feature registry**: every optional feature is a keep/strip choice —
   `rust` (the whole workspace: `Cargo.toml`, `Cargo.lock`, `crates/`,
@@ -124,10 +129,15 @@ Key behaviors:
   (comma-separated or repeated). Stripping `rust` cascades to `cli`;
   stripping `cli` while keeping `rust` is rejected (cargo can't load an
   empty workspace) — declining the starter crate in the wizard strips
-  `rust` too, with a printed note. `.cargo/` (which holds only the
-  `cargo molt` alias) is deleted unconditionally. The registry lives in
+  `rust` too, with a printed note, and a prompt whose answer explicit flags
+  already force (`--keep rust` forces the crate, `--keep cli` forces the
+  workspace, `--strip cli` forces stripping rust) is skipped with a note.
+  `.cargo/` (which holds only the `cargo molt` alias) and the MIT `LICENSE`
+  + `license` fields are deleted unconditionally — the license is fuz.dev's,
+  not the new project's, so keeping it is never right (same reasoning as the
+  personalized github-extras). The registry lives in
   `crates/fuz_template/src/features.rs` — new features are one entry + a
-  plan fragment there.
+  plan fragment there (the check sample configs derive from the registry).
 - **Identity fields**: name (required), npm name, description, domain,
   repo url — derived from the git origin when it isn't the template's.
 - **Self-verifying**: `cargo molt check` and the crate's tests verify every
@@ -175,12 +185,13 @@ src/
 ├── lib/                   # your library code
 │   ├── Mreows.svelte      # example component (replace me)
 │   └── Positioned.svelte  # example component (replace me)
+├── test/
+│   └── example.test.ts    # test file example
 └── routes/
     ├── +layout.svelte     # root layout with fuz_css imports
     ├── +layout.ts         # prerender: true, ssr: true
     ├── +page.svelte       # home page
     ├── style.css          # custom global styles
-    ├── example.test.ts    # test file example
     ├── about/+page.svelte
     └── docs/              # documentation pages
         ├── +layout.svelte # wraps docs in Docs component
@@ -269,8 +280,6 @@ Deploy with `gro deploy` (builds and pushes to deploy branch).
   production use
 - **Minimal test coverage** - Only one example test file included
 - **Static only** - No dynamic server-side content
-- **Tests colocated** - Tests in routes (`example.test.ts`) rather than
-  `src/test/` directory
 
 ## Project standards
 

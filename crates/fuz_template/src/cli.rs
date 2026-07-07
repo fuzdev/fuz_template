@@ -36,7 +36,8 @@ pub struct TopLevel {
     #[argh(option)]
     pub strip: Vec<String>,
 
-    /// apply the plan (the default prints the plan without writing)
+    /// apply the plan (without it, non-interactive runs write nothing and
+    /// the wizard asks before applying)
     #[argh(switch)]
     pub wetrun: bool,
 
@@ -46,6 +47,23 @@ pub struct TopLevel {
 
     #[argh(subcommand)]
     pub subcommand: Option<Subcommand>,
+}
+
+impl TopLevel {
+    /// Whether any molt-run flag was passed — they're meaningless combined
+    /// with the `check` subcommand, so the caller rejects that instead of
+    /// silently ignoring them.
+    pub const fn has_molt_flags(&self) -> bool {
+        self.name.is_some()
+            || self.npm_name.is_some()
+            || self.description.is_some()
+            || self.domain.is_some()
+            || self.repo.is_some()
+            || !self.keep.is_empty()
+            || !self.strip.is_empty()
+            || self.wetrun
+            || self.force
+    }
 }
 
 #[derive(FromArgs, Debug)]

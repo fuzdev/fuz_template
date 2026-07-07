@@ -1,5 +1,5 @@
 //! molt — transforms this `fuz_template` clone into your own project, then
-//! deletes itself. See the repo `README.md` for the full story.
+//! deletes itself. See the repo `README.md` for details.
 
 mod anchors;
 mod apply;
@@ -56,6 +56,11 @@ fn main() -> ExitCode {
 fn run(top: &TopLevel) -> Result<ExitCode, CliError> {
     let root = locate_root()?;
     if top.subcommand.is_some() {
+        if top.has_molt_flags() {
+            return Err(CliError::Usage(
+                "`molt check` takes no other flags".to_owned(),
+            ));
+        }
         check::run(&root)
     } else {
         molt(top, &root)
@@ -84,11 +89,13 @@ fn locate_root() -> Result<PathBuf, CliError> {
 /// What stands between a printed plan and applying it, given the run mode.
 ///
 /// The one combination with no gate at all is `--wetrun` on a clean tree —
-/// there `git checkout` is always a full undo. A dirty tree (reachable only
-/// via `--force`) never applies without the dirty-specific in-the-moment
-/// confirmation — on the `--wetrun` path and the wizard path alike — and
-/// without a terminal it never applies at all: "commit first" is always
-/// available, so an override flag would just recreate the hole.
+/// there `git reset --hard && git clean -fd` restores the pre-molt state
+/// (the tree was clean, so `git clean` removes only files molt created). A
+/// dirty tree (reachable only via `--force`) never applies without the
+/// dirty-specific in-the-moment confirmation — on the `--wetrun` path and
+/// the wizard path alike — and without a terminal it never applies at all:
+/// "commit first" is always available, so an override flag would just
+/// recreate the hole.
 #[derive(Debug, PartialEq, Eq)]
 enum ApplyGate {
     /// Apply without further confirmation (clean tree + `--wetrun`).
@@ -178,8 +185,16 @@ fn molt(top: &TopLevel, root: &Path) -> Result<ExitCode, CliError> {
         return Ok(ExitCode::SUCCESS);
     }
 
+    if matches!(gate, ApplyGate::Confirm | ApplyGate::ConfirmDirty) {
+        // the tree may have changed while the prompt waited — apply would
+        // silently skip an edit whose anchor disappeared, so verify again
+        let issues = plan::verify(root, &plan)?;
+        if !issues.is_empty() {
+            return Err(CliError::Drift(issues.join("\n")));
+        }
+    }
     apply::apply(root, &plan)?;
-    print_next_steps(&config);
+    print_next_steps(&config, clean);
     Ok(ExitCode::SUCCESS)
 }
 
@@ -211,7 +226,11 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
     };
 
     let description = match &top.description {
-        Some(description) => description.clone(),
+        Some(description) => {
+            let description = description.trim().to_owned();
+            config::validate_description(&description)?;
+            description
+        }
         None if interactive => wizard::prompt("one-line description (optional)", Some(""))?,
         None => String::new(),
     };
@@ -264,6 +283,38 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
                 kept.remove(feature.id);
                 continue;
             }
+            // a prompt whose answer explicit flags already force is skipped
+            // with a note instead of contradicting the flag after the fact
+            if let Some(child) = features::FEATURES.iter().find(|f| {
+                f.requires == Some(feature.id) && explicit.contains(f.id) && kept.contains(f.id)
+            }) {
+                println!(
+                    "note: keeping {} — --keep {} needs it",
+                    feature.id, child.id
+                );
+                kept.insert(feature.id);
+                continue;
+            }
+            // cargo rejects an empty workspace, and `cli` is its only member crate
+            // TODO: generalize via `CRATE_FEATURES` when more crate features exist
+            if feature.id == features::RUST
+                && explicit.contains(features::CLI)
+                && !kept.contains(features::CLI)
+            {
+                println!("note: --strip cli leaves the Rust workspace empty — stripping rust too");
+                kept.remove(feature.id);
+                continue;
+            }
+            if feature.id == features::CLI
+                && explicit.contains(features::RUST)
+                && kept.contains(features::RUST)
+            {
+                println!(
+                    "note: keeping the starter CLI crate — a kept Rust workspace needs a member crate"
+                );
+                kept.insert(feature.id);
+                continue;
+            }
             if wizard::prompt_bool(feature.prompt, feature.default_keep)? {
                 kept.insert(feature.id);
             } else {
@@ -310,8 +361,11 @@ fn non_empty(value: &str) -> Option<String> {
     }
 }
 
-fn print_next_steps(config: &MoltConfig) {
-    println!("\nmolt complete — {} is yours. next steps:", config.name);
+fn print_next_steps(config: &MoltConfig, clean: bool) {
+    println!(
+        "\nmolt complete — the project is now {}. next steps:",
+        config.name
+    );
     println!("  git status   # review what changed");
     println!("  npm i        # refresh package-lock.json for the new name");
     println!("  gro check    # typecheck, test, lint, format");
@@ -322,8 +376,14 @@ fn print_next_steps(config: &MoltConfig) {
         "  git add -A && git commit -m \"chore: molt fuz_template into {}\"",
         config.name
     );
+    if clean {
+        println!("\nto undo the molt: git reset --hard && git clean -fd");
+    }
     println!(
         "\nstatic/logo.svg and static/favicon.png still carry the template's spider — replace them when ready."
+    );
+    println!(
+        "molt deleted the template's MIT LICENSE and license fields — choose your own: https://choosealicense.com/"
     );
     if config.keeps(features::GITHUB_EXTRAS) {
         if config.repo_url.is_some() {

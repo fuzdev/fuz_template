@@ -84,6 +84,7 @@ mod tests {
             "package.json",
             "README.md",
             "CLAUDE.md",
+            "LICENSE",
             "vite.config.ts",
             "Cargo.toml",
             "Cargo.lock",
@@ -142,6 +143,10 @@ mod tests {
         assert!(package_json.contains("\"homepage\": \"https://sample.example.com/\""));
         assert_eq!(read(&dir, "static/CNAME"), "sample.example.com\n");
 
+        // the template's MIT license never ships in a molted project
+        assert!(!dir.join("LICENSE").exists());
+        assert!(!package_json.contains("\"license\""));
+
         let layout = read(&dir, "src/routes/+layout.svelte");
         assert!(!layout.contains("logo_fuz_template"));
         assert!(layout.contains("<title>@sample/sample_app</title>"));
@@ -183,12 +188,16 @@ mod tests {
 
         let workspace = read(&dir, "Cargo.toml");
         assert!(workspace.contains("members = [\"crates/sample_app\"]"));
+        assert!(!workspace.contains("license"));
         assert!(!dir.join("crates/fuz_template").exists());
         assert!(!dir.join("crates/app_cli").exists());
         assert!(!dir.join(".cargo").exists());
         let crate_manifest = read(&dir, "crates/sample_app/Cargo.toml");
         assert!(crate_manifest.contains("name = \"sample_app\""));
-        assert!(crate_manifest.contains("description = \"a sample app\""));
+        // the user's description survives verbatim — the app_cli token rename
+        // runs before the description insert
+        assert!(crate_manifest.contains("description = \"a sample app that replaces app_cli\""));
+        assert!(!crate_manifest.contains("license"));
         let main_rs = read(&dir, "crates/sample_app/src/main.rs");
         assert!(main_rs.contains("hello {who}, from sample_app"));
         assert!(!main_rs.contains("app_cli"));
@@ -212,7 +221,9 @@ mod tests {
         assert!(package_json.contains("\"name\": \"plain_app\""));
         assert!(!package_json.contains("homepage"));
         assert!(!package_json.contains("repository"));
+        assert!(!package_json.contains("\"license\""));
         assert!(!dir.join("static/CNAME").exists());
+        assert!(!dir.join("LICENSE").exists());
 
         assert!(!dir.join("Cargo.toml").exists());
         assert!(!dir.join("Cargo.lock").exists());

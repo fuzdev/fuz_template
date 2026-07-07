@@ -101,8 +101,9 @@ And to remove the Rust workspace, delete `Cargo.toml`, `Cargo.lock`, `crates/`,
 
 Then run `npm i` to update `package-lock.json`.
 
-Optionally add a [license file](https://choosealicense.com/)
-and [`package.json` value](https://spdx.org/licenses/), like `"license": "MIT"`.
+The template is MIT-licensed ([`LICENSE`](LICENSE), plus `license` fields in
+`package.json` and `Cargo.toml`) — keep MIT for your project or swap in
+[another license](https://choosealicense.com/).
 
 ## molt
 
@@ -121,6 +122,8 @@ What it does, driven by your answers:
 - updates or removes `static/CNAME`, `homepage`, and `repository`
 - deletes the demo components and writes a minimal starting page
 - regenerates `README.md` and `CLAUDE.md` for your project
+- deletes the template's MIT `LICENSE` and `license` fields — your project
+  chooses its own license
 - keeps or strips each optional feature — `rust` (the whole workspace),
   `cli` (the starter crate at [`crates/app_cli`](crates/app_cli), renamed to
   your project name), `docs` (the docs system), and `github-extras`
@@ -129,8 +132,9 @@ What it does, driven by your answers:
   stripping `cli` alone is rejected — a kept workspace needs a crate
 - deletes its own crate
 
-It refuses to run without a clean git tree, so undo is always
-`git checkout .` away. `--force` lets a dirty tree through for _planning_,
+It refuses to run without a clean git tree, so an applied plan can be undone
+with `git reset --hard && git clean -fd` (the tree was clean, so `git clean`
+removes only files molt created). `--force` lets a dirty tree through for _planning_,
 but applying to a dirty tree always requires an interactive confirmation —
 without a terminal it refuses (exit 2), because there'd be no clean undo
 point. Run with flags instead of prompts for non-interactive use
@@ -157,7 +161,7 @@ gro test -- --forwarded-args 'to vitest'
 ```
 
 See [Vitest](https://github.com/vitest-dev/vitest),
-[`src/routes/example.test.ts`](src/routes/example.test.ts),
+[`src/test/example.test.ts`](src/test/example.test.ts),
 and [Gro's test docs](https://github.com/fuzdev/gro/blob/main/src/docs/test.md) for more.
 
 ## deploy

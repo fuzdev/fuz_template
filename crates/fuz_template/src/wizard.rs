@@ -7,6 +7,12 @@ pub fn interactive() -> bool {
     io::stdin().is_terminal() && io::stdout().is_terminal()
 }
 
+/// Maps a terminal io failure to `CliError::Terminal` — the only place raw
+/// io errors become that variant.
+fn terminal<T>(result: io::Result<T>) -> Result<T, CliError> {
+    result.map_err(CliError::Terminal)
+}
+
 /// Prompts for a line of input; empty input (or EOF) selects `default`.
 pub fn prompt(label: &str, default: Option<&str>) -> Result<String, CliError> {
     Ok(prompt_raw(label, default)?.0)
@@ -33,13 +39,13 @@ pub fn prompt_validated(
 fn prompt_raw(label: &str, default: Option<&str>) -> Result<(String, bool), CliError> {
     let mut stdout = io::stdout().lock();
     match default {
-        Some(d) if !d.is_empty() => write!(stdout, "{label} [{d}]: ")?,
-        _ => write!(stdout, "{label}: ")?,
+        Some(d) if !d.is_empty() => terminal(write!(stdout, "{label} [{d}]: "))?,
+        _ => terminal(write!(stdout, "{label}: "))?,
     }
-    stdout.flush()?;
+    terminal(stdout.flush())?;
     drop(stdout);
     let mut line = String::new();
-    let bytes_read = io::stdin().lock().read_line(&mut line)?;
+    let bytes_read = terminal(io::stdin().lock().read_line(&mut line))?;
     let trimmed = line.trim();
     let value = if trimmed.is_empty() {
         default.unwrap_or("").to_owned()
@@ -54,11 +60,11 @@ pub fn prompt_bool(label: &str, default: bool) -> Result<bool, CliError> {
     let suffix = if default { "[Y/n]" } else { "[y/N]" };
     loop {
         let mut stdout = io::stdout().lock();
-        write!(stdout, "{label} {suffix}: ")?;
-        stdout.flush()?;
+        terminal(write!(stdout, "{label} {suffix}: "))?;
+        terminal(stdout.flush())?;
         drop(stdout);
         let mut line = String::new();
-        let bytes_read = io::stdin().lock().read_line(&mut line)?;
+        let bytes_read = terminal(io::stdin().lock().read_line(&mut line))?;
         let answer = line.trim().to_ascii_lowercase();
         if bytes_read == 0 || answer.is_empty() {
             return Ok(default);
@@ -68,7 +74,7 @@ pub fn prompt_bool(label: &str, default: bool) -> Result<bool, CliError> {
             "n" | "no" => return Ok(false),
             _ => {
                 let mut stdout = io::stdout().lock();
-                writeln!(stdout, "please answer y or n")?;
+                terminal(writeln!(stdout, "please answer y or n"))?;
             }
         }
     }

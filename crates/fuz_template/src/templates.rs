@@ -70,6 +70,7 @@ mod tests {
             "__DOCS_LINK__",
             "__DOCS_BULLET__",
             "__MEMBERS__",
+            "__LICENSE__",
         ];
         for template in [
             PAGE_SVELTE,

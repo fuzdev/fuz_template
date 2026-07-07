@@ -34,9 +34,11 @@ pub enum CliError {
         source: std::io::Error,
     },
 
-    /// Terminal input/output failed mid-wizard.
+    /// Terminal input/output failed mid-wizard. Deliberately not `#[from]` —
+    /// only the wizard maps into this, so a stray `?` on a filesystem error
+    /// can't get mislabeled as a terminal failure.
     #[error("terminal io failed: {0}")]
-    Terminal(#[from] std::io::Error),
+    Terminal(std::io::Error),
 }
 
 impl CliError {

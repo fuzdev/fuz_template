@@ -6,11 +6,12 @@
 //! template, update the anchor here in the same change.
 
 pub const PACKAGE_JSON_NAME: &str = "  \"name\": \"@fuzdev/fuz_template\",\n";
-pub const PACKAGE_JSON_DESCRIPTION: &str = "  \"description\": \"a static web app and Node library template with TypeScript, Svelte, SvelteKit, Vite, esbuild, Gro, and Fuz\",\n";
+pub const PACKAGE_JSON_DESCRIPTION: &str = "  \"description\": \"a static web app template built with the fuz stack: TypeScript, Svelte, SvelteKit, and Gro\",\n";
 pub const PACKAGE_JSON_GLYPH: &str = "  \"glyph\": \"\u{2744}\",\n";
 pub const PACKAGE_JSON_LOGO: &str = "  \"logo\": \"logo.svg\",\n";
 pub const PACKAGE_JSON_LOGO_ALT: &str =
     "  \"logo_alt\": \"a friendly pixelated spider facing you\",\n";
+pub const PACKAGE_JSON_LICENSE: &str = "  \"license\": \"MIT\",\n";
 pub const PACKAGE_JSON_HOMEPAGE: &str = "  \"homepage\": \"https://template.fuz.dev/\",\n";
 pub const PACKAGE_JSON_REPOSITORY: &str =
     "  \"repository\": \"https://github.com/fuzdev/fuz_template\",\n";
@@ -40,12 +41,18 @@ pub const README_H1: &str = "# @fuzdev/fuz_template \u{2744}";
 pub const CLAUDE_H1: &str = "# fuz_template\n";
 pub const CNAME_CONTENT: &str = "template.fuz.dev";
 pub const WORKSPACE_MEMBERS: &str = "members = [\"crates/app_cli\", \"crates/fuz_template\"]";
+/// The workspace manifest's license line — stripped on eject along with the
+/// `LICENSE` file (a molted project chooses its own license).
+pub const WORKSPACE_LICENSE: &str = "license = \"MIT\"\n";
 
 /// The starter CLI crate's name — molt renames every occurrence (and the
 /// crate directory) to the chosen project name.
 pub const APP_CLI_TOKEN: &str = "app_cli";
 /// The starter CLI crate's placeholder description line.
 pub const APP_CLI_DESCRIPTION: &str = "description = \"a CLI scaffolded by fuz_template's molt\"\n";
+/// The starter CLI crate's license inheritance line, stripped on eject
+/// (the workspace's license line goes with it).
+pub const APP_CLI_LICENSE: &str = "license.workspace = true\n";
 
 /// The `rust` job appended to `.github/workflows/check.yml` — kept here as an
 /// exact-match anchor so stripping the `rust` feature can remove it.

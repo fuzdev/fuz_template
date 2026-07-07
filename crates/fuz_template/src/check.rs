@@ -25,7 +25,8 @@ pub fn run(root: &Path) -> Result<ExitCode, CliError> {
             eprintln!("  {issue}");
         }
         eprintln!("(update crates/fuz_template/src/anchors.rs or templates/ in the same change)");
-        Ok(ExitCode::FAILURE)
+        // drift is caller-must-fix, same dialect as `CliError::Drift`
+        Ok(ExitCode::from(2))
     }
 }
 
@@ -38,19 +39,24 @@ pub fn check_all(root: &Path) -> Result<Vec<String>, CliError> {
         issues.extend(verify(root, &build_plan(&config))?);
     }
     // the embedded workspace template must stay byte-identical to the live
-    // root Cargo.toml apart from the members line — otherwise an edit to the
-    // live lints/profile/deps would silently ship a stale workspace to every
-    // molted project while the members anchor still matched
+    // root Cargo.toml apart from the members and license lines — otherwise
+    // an edit to the live lints/profile/deps would silently ship a stale
+    // workspace to every molted project while the members anchor still matched
     let live_path = root.join("Cargo.toml");
     let live = fs::read_to_string(&live_path).map_err(|source| CliError::Io {
         path: live_path,
         source,
     })?;
-    let rendered = templates::WORKSPACE_CARGO_TOML
-        .replace("members = [__MEMBERS__]", anchors::WORKSPACE_MEMBERS);
+    let rendered = templates::render(
+        templates::WORKSPACE_CARGO_TOML,
+        &[
+            ("members = [__MEMBERS__]", anchors::WORKSPACE_MEMBERS),
+            ("__LICENSE__", anchors::WORKSPACE_LICENSE),
+        ],
+    );
     if live != rendered {
         issues.push(
-            "Cargo.toml: drifted from crates/fuz_template/templates/workspace_cargo.toml.in (only the members line may differ)"
+            "Cargo.toml: drifted from crates/fuz_template/templates/workspace_cargo.toml.in (only the members and license lines may differ)"
                 .to_owned(),
         );
     }
@@ -60,22 +66,19 @@ pub fn check_all(root: &Path) -> Result<Vec<String>, CliError> {
 }
 
 /// Two configs that together exercise every plan branch: one keeps every
-/// feature and sets every optional value, one strips every feature and
-/// clears the optional values.
+/// registry feature (derived from `features::FEATURES`, so a new feature is
+/// covered without touching this) and sets every optional value, one strips
+/// every feature and clears the optional values.
 pub fn sample_configs() -> [MoltConfig; 2] {
     [
         MoltConfig {
             name: "sample_app".to_owned(),
             npm_name: "@sample/sample_app".to_owned(),
-            description: "a sample app".to_owned(),
+            // contains "app_cli" to prove the crate rename can't corrupt it
+            description: "a sample app that replaces app_cli".to_owned(),
             domain: Some("sample.example.com".to_owned()),
             repo_url: Some("https://github.com/sample/sample_app".to_owned()),
-            kept: BTreeSet::from([
-                features::RUST,
-                features::CLI,
-                features::DOCS,
-                features::GITHUB_EXTRAS,
-            ]),
+            kept: features::FEATURES.iter().map(|f| f.id).collect(),
         },
         MoltConfig {
             name: "plain_app".to_owned(),

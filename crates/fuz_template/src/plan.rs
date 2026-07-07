@@ -104,9 +104,18 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
         (anchors::PACKAGE_JSON_GLYPH, "remove template glyph"),
         (anchors::PACKAGE_JSON_LOGO, "remove template logo"),
         (anchors::PACKAGE_JSON_LOGO_ALT, "remove template logo_alt"),
+        (
+            anchors::PACKAGE_JSON_LICENSE,
+            "remove license (choose your own)",
+        ),
     ] {
         plan.push(replace_once("package.json", anchor, String::new(), label));
     }
+
+    // the template's MIT license is fuz.dev's, not the new project's
+    plan.push(Action::DeleteFile {
+        path: PathBuf::from("LICENSE"),
+    });
     let homepage_replacement = config.domain.as_ref().map_or_else(String::new, |domain| {
         format!("  \"homepage\": \"https://{domain}/\",\n")
     });
@@ -313,21 +322,18 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
             anchors: vec![anchors::WORKSPACE_MEMBERS.to_owned()],
             content: templates::render(
                 templates::WORKSPACE_CARGO_TOML,
-                &[("__MEMBERS__", &members)],
+                &[("__MEMBERS__", &members), ("__LICENSE__", "")],
             ),
-            label: "workspace without molt's crate".to_owned(),
+            label: "workspace without molt's crate or the template's license".to_owned(),
         });
-        let description_replacement = if config.description.is_empty() {
-            String::new()
-        } else {
-            format!("description = \"{}\"\n", json_escape(&config.description))
-        };
         plan.push(replace_once(
             "crates/app_cli/Cargo.toml",
-            anchors::APP_CLI_DESCRIPTION,
-            description_replacement,
-            "description",
+            anchors::APP_CLI_LICENSE,
+            String::new(),
+            "remove the license inheritance (the workspace line is gone)",
         ));
+        // rename the token before inserting the user's description, which may
+        // itself contain "app_cli" and must survive verbatim
         for path in [
             "crates/app_cli/Cargo.toml",
             "crates/app_cli/src/main.rs",
@@ -340,6 +346,17 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
                 label: format!("{} \u{2192} {name}", anchors::APP_CLI_TOKEN),
             });
         }
+        let description_replacement = if config.description.is_empty() {
+            String::new()
+        } else {
+            format!("description = \"{}\"\n", json_escape(&config.description))
+        };
+        plan.push(replace_once(
+            "crates/app_cli/Cargo.toml",
+            anchors::APP_CLI_DESCRIPTION,
+            description_replacement,
+            "description",
+        ));
         plan.push(Action::RenameDir {
             from: PathBuf::from("crates/app_cli"),
             to: PathBuf::from(format!("crates/{name}")),

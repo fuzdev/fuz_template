@@ -5,8 +5,7 @@ members = [__MEMBERS__]
 [workspace.package]
 version = "0.0.1"
 edition = "2024"
-license = "MIT"
-publish = false
+__LICENSE__publish = false
 
 [workspace.dependencies]
 argh = "0.1"

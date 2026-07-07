@@ -21,6 +21,18 @@ impl MoltConfig {
     }
 }
 
+/// Names cargo refuses as package names: Rust keywords (strict + reserved,
+/// including 2024's `gen`) plus `test`, which conflicts with the built-in
+/// test library. The name becomes the starter crate's name, so a keyword
+/// would leave the molted workspace unable to build.
+const RESERVED_CRATE_NAMES: &[&str] = &[
+    "abstract", "as", "async", "await", "become", "box", "break", "const", "continue", "crate",
+    "do", "dyn", "else", "enum", "extern", "false", "final", "fn", "for", "gen", "if", "impl",
+    "in", "let", "loop", "macro", "match", "mod", "move", "mut", "override", "priv", "pub", "ref",
+    "return", "self", "static", "struct", "super", "test", "trait", "true", "try", "type",
+    "typeof", "unsafe", "unsized", "use", "virtual", "where", "while", "yield",
+];
+
 /// Validates a project name: `snake_case`, usable as a crate name.
 pub fn validate_name(name: &str) -> Result<(), CliError> {
     let valid_first = name.chars().next().is_some_and(|c| c.is_ascii_lowercase());
@@ -33,10 +45,26 @@ pub fn validate_name(name: &str) -> Result<(), CliError> {
             "invalid name {name:?}: use snake_case starting with a letter (e.g. my_app)"
         )));
     }
+    if RESERVED_CRATE_NAMES.contains(&name) {
+        return Err(CliError::Usage(format!(
+            "name {name:?} can't be used as a crate name (Rust keyword or built-in) — pick another"
+        )));
+    }
     if matches!(name, "fuz_template" | "app_cli" | "xtask") {
         return Err(CliError::Usage(format!(
             "name {name:?} is reserved — pick your own project name"
         )));
+    }
+    Ok(())
+}
+
+/// Validates a project description: a single line, no control characters
+/// (it lands in `package.json`, TOML, and markdown blockquotes).
+pub fn validate_description(description: &str) -> Result<(), CliError> {
+    if description.chars().any(char::is_control) {
+        return Err(CliError::Usage(
+            "description must be a single line without control characters".to_owned(),
+        ));
     }
     Ok(())
 }
@@ -105,6 +133,20 @@ mod tests {
         assert!(validate_name("").is_err());
         assert!(validate_name("fuz_template").is_err());
         assert!(validate_name("app_cli").is_err());
+        // Rust keywords and `test` can't be crate names
+        assert!(validate_name("match").is_err());
+        assert!(validate_name("loop").is_err());
+        assert!(validate_name("test").is_err());
+        assert!(validate_name("gen").is_err());
+        assert!(validate_name("matcher").is_ok());
+    }
+
+    #[test]
+    fn description_validation() {
+        assert!(validate_description("").is_ok());
+        assert!(validate_description("a fine one-liner").is_ok());
+        assert!(validate_description("line\nbreak").is_err());
+        assert!(validate_description("tab\there").is_err());
     }
 
     #[test]
