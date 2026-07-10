@@ -2,21 +2,14 @@
 
 [<img src="/static/logo.svg" alt="a friendly pixelated spider facing you" align="right" width="192" height="192">](https://template.fuz.dev/)
 
-> a static web app and Node library template with
-> [TypeScript](https://github.com/microsoft/TypeScript),
-> [Svelte](https://github.com/sveltejs/svelte),
-> [SvelteKit](https://github.com/sveltejs/kit),
-> [Vite](https://github.com/vitejs/vite),
-> [esbuild](https://github.com/evanw/esbuild),
-> [Gro](https://github.com/fuzdev/gro),
-> and [fuz_ui](https://github.com/fuzdev/fuz_ui)
+> a static web app template with optional Rust for the fuz-stack
 
 [**template.fuz.dev**](https://template.fuz.dev/)
 
 ## contents
 
 - [SvelteKit](https://github.com/sveltejs/kit) with [Svelte](https://github.com/sveltejs/svelte) and
-  [Vite](https://github.com/vitejs/vite)
+  [Vite](https://github.com/vitejs/vite) and optional [Rust](https://rust-lang.org/)
 - [fuz_css](https://github.com/fuzdev/fuz_css): CSS framework and design system based on style variables
 - [fuz_ui](https://github.com/fuzdev/fuz_ui):
   - Svelte UI library - [ui.fuz.dev](https://ui.fuz.dev/)
@@ -115,12 +108,12 @@ project, replace the copyright holder with your own; or swap in
 ## molt
 
 The template doubles as a Rust workspace, and `crates/fuz_template` is
-`molt` — a one-shot wizard that transforms this clone into your own project,
-then deletes itself. Like a spider shedding its template skin. 🕷
+`molt`, a simple wizard that transforms this clone into your own project,
+then deletes itself.
 
 ```bash
-cargo molt         # interactive wizard: prompts, prints the full plan, confirms
-cargo molt check   # verify molt's file anchors still match the template
+cargo molt        # interactive wizard: prompts, prints the full plan, confirms
+cargo molt check  # verify molt's file anchors still match the template
 ```
 
 What it does, driven by your answers:
