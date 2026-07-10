@@ -216,7 +216,7 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
             name.clone()
         }
         None if interactive => {
-            wizard::prompt_validated("project name (snake_case)", None, config::validate_name)?
+            wizard::prompt_validated("project name", None, config::validate_name)?
         }
         None => {
             return Err(CliError::Usage(
