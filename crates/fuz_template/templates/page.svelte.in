@@ -1,0 +1,13 @@
+<script lang="ts">
+	import {resolve} from '$app/paths';
+</script>
+
+<main>
+	<section>
+		<h1>__NAME__</h1>
+		<p>Welcome to <code>__NAME__</code> — this page is yours to replace.</p>
+		<p>
+			<a href={resolve('/about')}>about</a>__DOCS_LINK__
+		</p>
+	</section>
+</main>

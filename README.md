@@ -45,11 +45,10 @@ so the normal commands like `vite dev` work as expected.
 It also uses [Gro](https://github.com/fuzdev/gro)
 for tasks like deploying and more.
 
-If you're logged into GitHub, click "Use this template" above or clone with
-[`degit`](https://github.com/Rich-Harris/degit):
+If you're logged into GitHub, click "Use this template" above, or clone directly:
 
 ```bash
-npx degit fuzdev/fuz_template cooltoy
+git clone https://github.com/fuzdev/fuz_template.git cooltoy
 cd cooltoy
 npm i
 # then
@@ -65,7 +64,7 @@ gro sync # called by `gro dev`, refreshes generated files and calls `svelte-kit 
 > [Vite](https://github.com/vitejs/vite), [Gro](https://github.com/fuzdev/gro),
 > and [fuz_ui](https://github.com/fuzdev/fuz_ui)
 
-> [Windows will not be suported](https://github.com/fuzdev/fuz_template/issues/4) because
+> [Windows will not be supported](https://github.com/fuzdev/fuz_template/issues/4) because
 > I chose Bash instead - Fuz recommends [WSL](https://docs.microsoft.com/en-us/windows/wsl/about)
 
 The template includes
@@ -75,20 +74,78 @@ with no further configuration.
 To learn how to swap it out for another deployment target, see
 [the SvelteKit adapter docs](https://svelte.dev/docs/kit/adapters).
 
-To make it your own, change `@fuzdev/fuz_template` and `template.fuz.dev`
-to your project name in the following files:
+To make it your own, run the molt wizard (requires [Rust](https://rustup.rs/) and
+a clean git tree — commit or stash first):
 
-- [`package.json`](package.json)
-- [`svelte.config.js`](svelte.config.js)
+```bash
+cargo molt
+```
+
+It renames the project, strips the demo components, and deletes itself — see
+[molt](#molt) below.
+
+Prefer to do it by hand (or skip installing Rust)? Change `@fuzdev/fuz_template`
+and `template.fuz.dev` to your project name in the following files:
+
+- [`package.json`](package.json) — also remove or replace the `glyph`,
+  `logo`, and `logo_alt` fields
 - [`src/routes/+layout.svelte`](src/routes/+layout.svelte)
 - [`src/routes/+page.svelte`](src/routes/+page.svelte)
-- update or delete [`src/static/CNAME`](src/static/CNAME)
-  and ./.github/FUNDING.yml
+- [`src/routes/about/+page.svelte`](src/routes/about/+page.svelte)
+- update or delete [`static/CNAME`](static/CNAME),
+  ./.github/FUNDING.yml, and ./.github/ISSUE_TEMPLATE/
+
+And to remove the Rust workspace, delete `Cargo.toml`, `Cargo.lock`, `crates/`,
+`.cargo/`, `rust-toolchain.toml`, `clippy.toml`, and the `rust` job in
+[`.github/workflows/check.yml`](.github/workflows/check.yml).
+
+To remove the docs system, delete `src/routes/docs/` and
+[`src/routes/library.ts`](src/routes/library.ts), remove the docs link in
+[`src/routes/+page.svelte`](src/routes/+page.svelte), and drop the
+`svelte-docinfo` devDependency along with its wiring in
+[`vite.config.ts`](vite.config.ts) and [`src/app.d.ts`](src/app.d.ts).
 
 Then run `npm i` to update `package-lock.json`.
 
-Optionally add a [license file](https://choosealicense.com/)
-and [`package.json` value](https://spdx.org/licenses/), like `"license": "MIT"`.
+The template is MIT-licensed ([`LICENSE`](LICENSE), plus `license` fields in
+`package.json` and `Cargo.toml`), copyright fuz.dev — to keep MIT for your
+project, replace the copyright holder with your own; or swap in
+[another license](https://choosealicense.com/).
+
+## molt
+
+The template doubles as a Rust workspace, and `crates/fuz_template` is
+`molt` — a one-shot wizard that transforms this clone into your own project,
+then deletes itself. Like a spider shedding its template skin. 🕷
+
+```bash
+cargo molt         # interactive wizard: prompts, prints the full plan, confirms
+cargo molt check   # verify molt's file anchors still match the template
+```
+
+What it does, driven by your answers:
+
+- renames the project everywhere (`package.json`, page titles, headings)
+- updates or removes `static/CNAME`, `homepage`, and `repository`
+- deletes the demo components and writes a minimal starting page
+- regenerates `README.md` and `CLAUDE.md` for your project
+- deletes the template's MIT `LICENSE` and `license` fields — your project
+  chooses its own license
+- keeps or strips each optional feature — `rust` (the whole workspace),
+  `cli` (the starter crate at [`crates/app_cli`](crates/app_cli), renamed to
+  your project name), `docs` (the docs system), and `github-extras`
+  (funding + issue templates, personalized when kept) — via prompts or
+  `--keep`/`--strip` lists (e.g. `--strip rust` or `--keep github-extras --strip docs`);
+  stripping `cli` alone is rejected — a kept workspace needs a crate
+- deletes its own crate
+
+It refuses to run without a clean git tree, so an applied plan can be undone
+with `git reset --hard && git clean -fd` (the tree was clean, so `git clean`
+removes only files molt created). `--force` lets a dirty tree through for _planning_,
+but applying to a dirty tree always requires an interactive confirmation —
+without a terminal it refuses (exit 2), because there'd be no clean undo
+point. Run with flags instead of prompts for non-interactive use
+(`cargo molt --help`); in that mode nothing is written without `--wetrun`.
 
 ## build
 
@@ -111,7 +168,7 @@ gro test -- --forwarded-args 'to vitest'
 ```
 
 See [Vitest](https://github.com/vitest-dev/vitest),
-[`src/lib/example.test.ts`](src/lib/example.test.ts),
+[`src/test/example.test.ts`](src/test/example.test.ts),
 and [Gro's test docs](https://github.com/fuzdev/gro/blob/main/src/docs/test.md) for more.
 
 ## deploy

@@ -1,0 +1,36 @@
+# __NAME__
+
+__DESCRIPTION_BLOCK____NAME__ is a static web app built with the fuz stack:
+TypeScript, Svelte 5 (runes), SvelteKit with the static adapter, fuz_css,
+fuz_ui, and Gro as the task runner.
+
+## Gro commands
+
+```bash
+gro check     # typecheck, test, lint, format check (run before committing)
+gro typecheck # typecheck only (faster iteration)
+gro test      # run tests with vitest
+gro build     # build for production (static adapter)
+gro deploy    # build, commit, and push to deploy branch
+gro sync      # regenerate files and run svelte-kit sync
+```
+
+IMPORTANT for AI agents: Do NOT run `gro dev` — the developer manages the
+dev server.
+
+## Architecture
+
+- `src/routes/` — SvelteKit routes; `+layout.ts` exports `prerender = true`
+  for full static generation
+- `src/lib/` — library code (components, utilities)
+__DOCS_BULLET__- fuz_css utility classes are generated on demand by the
+  `vite_plugin_fuz_css` Vite plugin via the `virtual:fuz.css` module
+- Dark/light theme detection runs in `src/app.html` before render to prevent
+  theme flash
+
+## Project standards
+
+- TypeScript strict mode
+- Svelte 5 with runes API
+- Prettier with tabs, 100 char width
+__RUST_SECTION__

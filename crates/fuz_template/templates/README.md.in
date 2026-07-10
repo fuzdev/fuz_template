@@ -1,0 +1,37 @@
+# __NPM_NAME__
+
+__DESCRIPTION_BLOCK__Built with the [fuz stack](https://www.fuz.dev/) from
+[fuz_template](https://github.com/fuzdev/fuz_template): TypeScript,
+[Svelte](https://github.com/sveltejs/svelte),
+[SvelteKit](https://github.com/sveltejs/kit) with the static adapter,
+[fuz_css](https://github.com/fuzdev/fuz_css),
+[fuz_ui](https://github.com/fuzdev/fuz_ui),
+and [Gro](https://github.com/fuzdev/gro).
+
+## usage
+
+```bash
+npm i
+npm run dev # or `gro dev`
+```
+
+## check
+
+```bash
+gro check # typecheck, test, lint, format check
+```
+
+## build
+
+```bash
+gro build
+```
+
+## deploy
+
+Build, commit, and push to the `deploy` branch, e.g. for GitHub Pages:
+
+```bash
+gro deploy
+```
+__RUST_SECTION__

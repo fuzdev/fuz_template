@@ -1,0 +1,12 @@
+
+## rust
+
+The repo doubles as a Rust workspace (`Cargo.toml`, `crates/`) sharing the
+fuz ecosystem's lints and release profile, with the toolchain pinned in
+`rust-toolchain.toml`:
+
+```bash
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+cargo fmt --check
+```

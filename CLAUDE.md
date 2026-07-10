@@ -57,39 +57,142 @@ fuz_template is a **SvelteKit starter template**:
 
 ## Using the template
 
-Clone with degit or use GitHub's "Use this template" button:
+Use GitHub's "Use this template" button or clone directly:
 
 ```bash
-npx degit fuzdev/fuz_template myproject
+git clone https://github.com/fuzdev/fuz_template.git myproject
 cd myproject
 npm i
 ```
 
-**Files to customize:**
+Then transform it into your own project with molt (see below):
 
-- `package.json` - name, version, description, homepage, repository
-- `svelte.config.js` - update origin URL
-- `src/routes/+layout.svelte` - update `<title>`
+```bash
+cargo molt
+```
+
+**Files molt customizes (or do it by hand):**
+
+- `package.json` - name, description, homepage, repository, glyph/logo fields
+- `src/routes/+layout.svelte` - `<title>`, template logo
 - `src/routes/+page.svelte` - replace demo content
+- `src/routes/about/+page.svelte` - heading
+- `src/lib/Mreows.svelte` and `src/lib/Positioned.svelte` - deleted (demo components)
+- `LICENSE` and the `license` fields - deleted (the MIT license is the
+  template's; your project chooses its own)
 - `static/CNAME` - update or delete for your domain
-- `.github/FUNDING.yml` - update or delete
+- `.github/FUNDING.yml` and `.github/ISSUE_TEMPLATE/` - update or delete
+- `README.md` and `CLAUDE.md` - regenerate for the new project
+
+Not customized: `static/logo.svg` and `static/favicon.png` keep the template's
+spider (molt prints a reminder), and `package-lock.json` keeps the old name
+until you run `npm i`.
+
+## molt (self-eject CLI)
+
+`crates/fuz_template` is molt — a one-shot wizard that personalizes the
+clone and then deletes itself (like create-react-app's eject, or a spider
+shedding its skin). Invoked via the cargo alias in `.cargo/config.toml`:
+
+```bash
+cargo molt         # interactive wizard: prompts, prints the plan, confirms
+cargo molt check   # verify molt's anchors still match the template
+cargo molt --help  # all flags, for non-interactive use
+```
+
+Key behaviors:
+
+- **Requires a git repo with a clean tree** (exit 2 otherwise; `--force`
+  overrides dirty, nothing overrides no-git); an applied plan is undone with
+  `git reset --hard && git clean -fd` (the tree was clean, so `git clean`
+  removes only files molt created).
+  Applying to a dirty tree (only reachable via `--force`) always demands the
+  dirty-specific in-the-moment confirmation — on the `--wetrun` path and the
+  wizard path alike; `--wetrun` alone never skips it, and without a terminal
+  the dirty apply is refused (exit 2). The only ungated write path is
+  `--wetrun` on a clean tree.
+- **Plan-then-apply**: every file edit is anchored on exact current content;
+  one unmatched anchor aborts before any write, and anchors re-verify after
+  a confirm prompt, immediately before writing. Non-interactive runs write
+  nothing without `--wetrun`.
+- **Feature registry**: every optional feature is a keep/strip choice —
+  `rust` (the whole workspace: `Cargo.toml`, `Cargo.lock`, `crates/`,
+  `rust-toolchain.toml`, `clippy.toml`, and the `rust` CI job), `cli` (the
+  starter crate `crates/app_cli`, renamed to `crates/{name}` with every
+  `app_cli` occurrence substituted), `docs` (`src/routes/docs/` +
+  `src/routes/library.ts` + the starter page's docs link + the
+  svelte-docinfo tooling: devDependency, Vite plugin, ambient types), and
+  `github-extras` (FUNDING.yml + issue templates; the only default-strip —
+  kept copies are personalized with funding placeholders and discussion
+  links pointed at your repo url).
+  One prompt each in the wizard — except `cli`, which rides with the `rust`
+  prompt while it's the only crate feature (a kept workspace needs a member
+  crate, so there is no separate decision) — or `--keep`/`--strip` id lists
+  (comma-separated or repeated). Stripping `rust` cascades to `cli`;
+  stripping `cli` while keeping `rust` is rejected (cargo can't load an
+  empty workspace), and a prompt whose answer explicit flags already force
+  (`--keep cli` forces the workspace, `--strip cli` forces stripping rust)
+  is skipped with a note.
+  `.cargo/` (which holds only the `cargo molt` alias) and the MIT `LICENSE`
+  + `license` fields are deleted unconditionally — the license is fuz.dev's,
+  not the new project's, so keeping it is never right (same reasoning as the
+  personalized github-extras). The registry lives in
+  `crates/fuz_template/src/features.rs` — new features are one entry + a
+  plan fragment there (the check sample configs derive from the registry).
+- **Identity fields**: name (required), npm name, description, domain,
+  repo url — derived from the git origin when it isn't the template's.
+- **Self-verifying**: `cargo molt check` and the crate's tests verify every
+  anchor against the working tree — and that the embedded workspace manifest
+  template stays byte-identical to the live root `Cargo.toml` apart from the
+  members line — so a template edit that would break ejection fails
+  `cargo test` (and CI) at the same commit. When you edit an anchored file,
+  update `crates/fuz_template/src/anchors.rs` (and the embedded templates in
+  `crates/fuz_template/templates/`) in the same change.
+
+## Rust workspace
+
+The repo doubles as a Rust workspace following the fuz ecosystem's
+conventions: root `Cargo.toml` with the canonical lint block
+(`unsafe_code = "forbid"`, clippy pedantic/nursery at warn) and release
+profile, `clippy.toml` test allowances, and the toolchain pinned in
+`rust-toolchain.toml`. Do not use Gro for the Rust side — run cargo
+directly:
+
+```bash
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+cargo fmt --check
+```
+
+CI runs these in the `rust` job of `.github/workflows/check.yml`. Errors
+follow thiserror enums with `.exit_code()`/`.hint()` helpers and
+`fn main() -> ExitCode`; exit codes: `0` success, `2` caller-must-fix
+(usage, preconditions, anchor drift), `1` everything else. Arg parsing uses
+argh with an explicit `from_args` so usage errors exit `2`.
 
 ## Architecture
 
 ### Directory structure
 
 ```
+Cargo.toml                 # Rust workspace (lints, profile, deps)
+crates/
+├── app_cli/               # starter CLI crate — molt renames it to yours
+└── fuz_template/          # molt — the self-eject CLI (deletes itself)
+    ├── src/               # plan/verify/apply, wizard, features, anchors
+    └── templates/         # embedded output templates (*.in)
 src/
 ├── app.html               # HTML entry with theme detection
 ├── lib/                   # your library code
 │   ├── Mreows.svelte      # example component (replace me)
 │   └── Positioned.svelte  # example component (replace me)
+├── test/
+│   └── example.test.ts    # test file example
 └── routes/
     ├── +layout.svelte     # root layout with fuz_css imports
     ├── +layout.ts         # prerender: true, ssr: true
     ├── +page.svelte       # home page
     ├── style.css          # custom global styles
-    ├── example.test.ts    # test file example
     ├── about/+page.svelte
     └── docs/              # documentation pages
         ├── +layout.svelte # wraps docs in Docs component
@@ -114,8 +217,8 @@ Replace these with your actual components.
 
 - `+layout.ts` exports `prerender = true` and `ssr = true` for full static
   generation
-- `svelte.config.js` enables runes mode and configures CSP via
-  `create_csp_directives()` from fuz_ui
+- `svelte.config.js` enables runes mode and includes a commented-out example
+  CSP config using `create_csp_directives()` from fuz_ui
 - Uses `@sveltejs/adapter-static` for static output
 
 ### Theme detection
@@ -178,15 +281,14 @@ Deploy with `gro deploy` (builds and pushes to deploy branch).
   production use
 - **Minimal test coverage** - Only one example test file included
 - **Static only** - No dynamic server-side content
-- **Tests colocated** - Tests in routes (`example.test.ts`) rather than
-  `src/test/` directory
 
 ## Project standards
 
 - TypeScript strict mode
 - Svelte 5 with runes API
 - Prettier with tabs, 100 char width
-- Node >= 22.15
+- Node >= 24.14
+- Rust pinned via `rust-toolchain.toml` (edition 2024)
 - Private package (not published to npm)
 
 ## Related projects

@@ -1,0 +1,5 @@
+# Pinned because clippy's nursery lints are warn-level and CI denies warnings —
+# a floating toolchain would break the build on new lints.
+[toolchain]
+channel = "1.94.1"
+components = ["rustfmt", "clippy"]
