@@ -125,13 +125,14 @@ Key behaviors:
   `github-extras` (FUNDING.yml + issue templates; the only default-strip —
   kept copies are personalized with funding placeholders and discussion
   links pointed at your repo url).
-  One prompt each in the wizard, or `--keep`/`--strip` id lists
+  One prompt each in the wizard — except `cli`, which rides with the `rust`
+  prompt while it's the only crate feature (a kept workspace needs a member
+  crate, so there is no separate decision) — or `--keep`/`--strip` id lists
   (comma-separated or repeated). Stripping `rust` cascades to `cli`;
   stripping `cli` while keeping `rust` is rejected (cargo can't load an
-  empty workspace) — declining the starter crate in the wizard strips
-  `rust` too, with a printed note, and a prompt whose answer explicit flags
-  already force (`--keep rust` forces the crate, `--keep cli` forces the
-  workspace, `--strip cli` forces stripping rust) is skipped with a note.
+  empty workspace), and a prompt whose answer explicit flags already force
+  (`--keep cli` forces the workspace, `--strip cli` forces stripping rust)
+  is skipped with a note.
   `.cargo/` (which holds only the `cargo molt` alias) and the MIT `LICENSE`
   + `license` fields are deleted unconditionally — the license is fuz.dev's,
   not the new project's, so keeping it is never right (same reasoning as the

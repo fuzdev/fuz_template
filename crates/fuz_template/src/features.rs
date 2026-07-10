@@ -32,11 +32,13 @@ pub const GITHUB_EXTRAS: &str = "github-extras";
 pub const FEATURES: [Feature; 4] = [
     Feature {
         id: RUST,
-        prompt: "keep the Rust workspace?",
+        prompt: "keep the Rust workspace? (includes the starter CLI crate, renamed to crates/<name>)",
         default_keep: true,
         requires: None,
     },
     Feature {
+        // the wizard skips this prompt while `cli` is the only crate feature —
+        // a kept workspace forces it, so the rust prompt covers the pair
         id: CLI,
         prompt: "keep the starter CLI crate? (renamed to crates/<name>)",
         default_keep: true,
@@ -134,7 +136,7 @@ pub fn cascade(kept: &mut BTreeSet<&'static str>) {
 
 /// Features that contribute workspace member crates. A kept `rust` needs at
 /// least one — cargo refuses to load a virtual manifest with no members.
-const CRATE_FEATURES: [&str; 1] = [CLI];
+pub const CRATE_FEATURES: [&str; 1] = [CLI];
 
 /// Whether `kept` keeps the Rust workspace with no member crates — an invalid
 /// combination the caller must reject (or repair by stripping `rust` too).

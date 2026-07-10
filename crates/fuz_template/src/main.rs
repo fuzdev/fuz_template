@@ -129,8 +129,16 @@ fn molt(top: &TopLevel, root: &Path) -> Result<ExitCode, CliError> {
             Some("git init && git add -A && git commit -m 'init from fuz_template'"),
         ));
     }
-    let clean =
-        git::output(root, &["status", "--porcelain"])?.is_some_and(|out| out.trim().is_empty());
+    // a failed `git status` is its own problem, not a dirty tree
+    let clean = match git::output(root, &["status", "--porcelain"])? {
+        Some(out) => out.trim().is_empty(),
+        None => {
+            return Err(CliError::precondition(
+                "`git status` failed in this repo",
+                Some("make sure `git status --porcelain` succeeds here, then rerun molt"),
+            ));
+        }
+    };
     if !clean && !top.force {
         return Err(CliError::precondition(
             "the git tree is dirty — molt wants a clean tree so it stays undoable",
@@ -182,6 +190,9 @@ fn molt(top: &TopLevel, root: &Path) -> Result<ExitCode, CliError> {
         ApplyGate::RefuseDirty => unreachable!(),
     };
     if !apply_now {
+        if gate != ApplyGate::DryRun {
+            println!("declined — nothing written");
+        }
         return Ok(ExitCode::SUCCESS);
     }
 
@@ -305,13 +316,10 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
                 kept.remove(feature.id);
                 continue;
             }
-            if feature.id == features::CLI
-                && explicit.contains(features::RUST)
-                && kept.contains(features::RUST)
-            {
-                println!(
-                    "note: keeping the starter CLI crate — a kept Rust workspace needs a member crate"
-                );
+            // while a feature is the only crate feature, keeping rust forces
+            // it (cargo rejects an empty workspace) — the rust prompt covers
+            // the pair, so there's no separate decision to prompt for
+            if features::CRATE_FEATURES == [feature.id] && kept.contains(features::RUST) {
                 kept.insert(feature.id);
                 continue;
             }
@@ -324,7 +332,9 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
         features::cascade(&mut kept);
     }
     // a kept rust workspace with no member crates can't build — repair the
-    // wizard case (both choices came from prompts), reject explicit flags
+    // wizard case (both choices came from prompts), reject explicit flags.
+    // unreachable while `CRATE_FEATURES` has one member (the wizard skips
+    // that prompt); kept for when a second crate feature returns the prompts
     if interactive
         && features::rust_without_crates(&kept)
         && !explicit.contains(features::RUST)

@@ -99,10 +99,17 @@ And to remove the Rust workspace, delete `Cargo.toml`, `Cargo.lock`, `crates/`,
 `.cargo/`, `rust-toolchain.toml`, `clippy.toml`, and the `rust` job in
 [`.github/workflows/check.yml`](.github/workflows/check.yml).
 
+To remove the docs system, delete `src/routes/docs/` and
+[`src/routes/library.ts`](src/routes/library.ts), remove the docs link in
+[`src/routes/+page.svelte`](src/routes/+page.svelte), and drop the
+`svelte-docinfo` devDependency along with its wiring in
+[`vite.config.ts`](vite.config.ts) and [`src/app.d.ts`](src/app.d.ts).
+
 Then run `npm i` to update `package-lock.json`.
 
 The template is MIT-licensed ([`LICENSE`](LICENSE), plus `license` fields in
-`package.json` and `Cargo.toml`) — keep MIT for your project or swap in
+`package.json` and `Cargo.toml`), copyright fuz.dev — to keep MIT for your
+project, replace the copyright holder with your own; or swap in
 [another license](https://choosealicense.com/).
 
 ## molt

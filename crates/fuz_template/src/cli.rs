@@ -4,6 +4,7 @@ use argh::FromArgs;
 /// molt deletes itself. Run with no arguments for the interactive wizard.
 /// Without a terminal, `--name` is required and nothing is written unless
 /// `--wetrun` is passed.
+// when adding a flag, include it in `has_molt_flags` below
 #[derive(FromArgs, Debug)]
 pub struct TopLevel {
     /// project name (`snake_case`; used for crate names, headings, and defaults)
