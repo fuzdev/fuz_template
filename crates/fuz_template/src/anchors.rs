@@ -6,7 +6,8 @@
 //! template, update the anchor here in the same change.
 
 pub const PACKAGE_JSON_NAME: &str = "  \"name\": \"@fuzdev/fuz_template\",\n";
-pub const PACKAGE_JSON_DESCRIPTION: &str = "  \"description\": \"a static web app template built with the fuz stack: TypeScript, Svelte, SvelteKit, and Gro\",\n";
+pub const PACKAGE_JSON_DESCRIPTION: &str =
+    "  \"description\": \"a static web app template with optional Rust for the fuz-stack\",\n";
 pub const PACKAGE_JSON_GLYPH: &str = "  \"glyph\": \"\u{2744}\",\n";
 pub const PACKAGE_JSON_LOGO: &str = "  \"logo\": \"logo.svg\",\n";
 pub const PACKAGE_JSON_LOGO_ALT: &str =
