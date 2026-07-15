@@ -1,7 +1,7 @@
 {
   "name": "@fuzdev/fuz_template",
   "version": "0.0.1",
-  "description": "a web app template with Svelte and optional Rust for the fuz-stack",
+  "description": "a web app template with TypeScript + Svelte + optional Rust for the fuz-stack",
   "glyph": "❄",
   "logo": "logo.svg",
   "logo_alt": "a friendly pixelated spider facing you",

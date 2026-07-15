@@ -2,7 +2,7 @@
 
 [<img src="/static/logo.svg" alt="a friendly pixelated spider facing you" align="right" width="192" height="192">](https://template.fuz.dev/)
 
-> a web app template with Svelte and optional Rust for the fuz-stack
+> a web app template with TypeScript + Svelte + optional Rust for the fuz-stack
 
 [**template.fuz.dev**](https://template.fuz.dev/)
 

@@ -7,7 +7,7 @@
 
 pub const PACKAGE_JSON_NAME: &str = "  \"name\": \"@fuzdev/fuz_template\",\n";
 pub const PACKAGE_JSON_DESCRIPTION: &str =
-    "  \"description\": \"a web app template with Svelte and optional Rust for the fuz-stack\",\n";
+    "  \"description\": \"a web app template with TypeScript + Svelte + optional Rust for the fuz-stack\",\n";
 pub const PACKAGE_JSON_GLYPH: &str = "  \"glyph\": \"\u{2744}\",\n";
 pub const PACKAGE_JSON_LOGO: &str = "  \"logo\": \"logo.svg\",\n";
 pub const PACKAGE_JSON_LOGO_ALT: &str =
