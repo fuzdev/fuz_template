@@ -2,7 +2,7 @@
 
 [<img src="/static/logo.svg" alt="a friendly pixelated spider facing you" align="right" width="192" height="192">](https://template.fuz.dev/)
 
-> a static web app template with optional Rust for the fuz-stack
+> a web app template with Svelte and optional Rust for the fuz-stack
 
 [**template.fuz.dev**](https://template.fuz.dev/)
 
@@ -170,7 +170,6 @@ and [Gro's test docs](https://github.com/fuzdev/gro/blob/main/src/docs/test.md) 
 (build, commit, and push) to the `deploy` branch, e.g. for GitHub Pages:
 
 ```bash
-npm i -D @sveltejs/package # enables Gro's library plugin by default
 npm run deploy
 # or
 gro deploy
