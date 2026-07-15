@@ -1,1 +1,0 @@
-const t="@fuzdev/fuz_template",e="0.0.1",o="a static web app template with optional Rust for the fuz-stack";const s="logo.svg",p="a friendly pixelated spider facing you";const n="https://template.fuz.dev/",a="https://github.com/fuzdev/fuz_template",c={name:t,version:e,private:!0,description:o,glyph:"❄",logo:s,logo_alt:p,license:"MIT",homepage:n,repository:a};export{c as p};
