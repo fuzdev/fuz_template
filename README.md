@@ -10,7 +10,7 @@
 
 - [SvelteKit](https://github.com/sveltejs/kit) with [Svelte](https://github.com/sveltejs/svelte) and
   [Vite](https://github.com/vitejs/vite) and optional [Rust](https://rust-lang.org/)
-- [fuz_css](https://github.com/fuzdev/fuz_css): CSS framework and design system based on style variables
+- [fuz_css](https://github.com/fuzdev/fuz_css): semantic-first CSS framework and design system
 - [fuz_ui](https://github.com/fuzdev/fuz_ui):
   - Svelte UI library - [ui.fuz.dev](https://ui.fuz.dev/)
   - is optional, to remove, `npm uninstall @fuzdev/fuz_ui` and delete the imports
@@ -67,17 +67,17 @@ with no further configuration.
 To learn how to swap it out for another deployment target, see
 [the SvelteKit adapter docs](https://svelte.dev/docs/kit/adapters).
 
-To make it your own, run the molt wizard (requires [Rust](https://rustup.rs/) and
-a clean git tree — commit or stash first):
+To make it your own, run the molt wizard (requires a clean git tree — commit
+or stash first):
 
 ```bash
-cargo molt
+npm run molt # or `cargo molt` — twin implementations, identical results
 ```
 
 It renames the project, strips the demo components, and deletes itself — see
 [molt](#molt) below.
 
-Prefer to do it by hand (or skip installing Rust)? Change `@fuzdev/fuz_template`
+Prefer to do it by hand? Change `@fuzdev/fuz_template`
 and `template.fuz.dev` to your project name in the following files:
 
 - [`package.json`](package.json) — also remove or replace the `glyph`,
@@ -107,13 +107,17 @@ project, replace the copyright holder with your own; or swap in
 
 ## molt
 
-The template doubles as a Rust workspace, and `crates/fuz_template` is
-`molt`, a simple wizard that transforms this clone into your own project,
-then deletes itself.
+molt is a simple wizard that transforms this clone into your own project,
+then deletes itself. It ships as twin implementations at full behavior
+parity — same flags, same prompts, byte-identical results — so you pick by
+toolchain: `src/lib/molt.ts` runs on the Node you already have, and the
+`molt` crate comes with the template's Rust workspace.
 
 ```bash
-cargo molt        # interactive wizard: prompts, prints the full plan, confirms
-cargo molt check  # verify molt's file anchors still match the template
+npm run molt          # interactive wizard: prompts, prints the full plan, confirms
+npm run molt -- check # verify molt's file anchors still match the template
+cargo molt            # the Rust twin — same flags and behavior
+cargo molt check
 ```
 
 What it does, driven by your answers:
@@ -130,7 +134,7 @@ What it does, driven by your answers:
   (funding + issue templates, personalized when kept) — via prompts or
   `--keep`/`--strip` lists (e.g. `--strip rust` or `--keep github-extras --strip docs`);
   stripping `cli` alone is rejected — a kept workspace needs a crate
-- deletes its own crate
+- deletes both of its own implementations (the crate, the script, and its tests)
 
 It refuses to run without a clean git tree, so an applied plan can be undone
 with `git reset --hard && git clean -fd` (the tree was clean, so `git clean`
@@ -138,7 +142,9 @@ removes only files molt created). `--force` lets a dirty tree through for _plann
 but applying to a dirty tree always requires an interactive confirmation —
 without a terminal it refuses (exit 2), because there'd be no clean undo
 point. Run with flags instead of prompts for non-interactive use
-(`cargo molt --help`); in that mode nothing is written without `--wetrun`.
+(`npm run molt -- --help` or `cargo molt --help`); in that mode nothing is
+written without `--wetrun`. A terminal always confirms before applying, so
+the only ungated write path is `--wetrun` on a clean tree without a terminal.
 
 ## build
 

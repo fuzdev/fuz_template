@@ -47,7 +47,7 @@ jobs:
       - run: npx @fuzdev/gro check --workspace --build
 
   rust:
-    # molt anchors this job (crates/fuz_template/src/anchors.rs) so stripping
+    # molt anchors this job (crates/molt/src/anchors.rs) so stripping
     # the rust feature can remove it — update the anchor when editing.
     runs-on: ubuntu-latest
     timeout-minutes: 15

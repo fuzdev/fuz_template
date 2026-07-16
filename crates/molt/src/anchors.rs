@@ -6,8 +6,7 @@
 //! template, update the anchor here in the same change.
 
 pub const PACKAGE_JSON_NAME: &str = "  \"name\": \"@fuzdev/fuz_template\",\n";
-pub const PACKAGE_JSON_DESCRIPTION: &str =
-    "  \"description\": \"a web app template with TypeScript + Svelte + optional Rust for the fuz-stack\",\n";
+pub const PACKAGE_JSON_DESCRIPTION: &str = "  \"description\": \"a web app template with TypeScript + Svelte + optional Rust for the fuz-stack\",\n";
 pub const PACKAGE_JSON_GLYPH: &str = "  \"glyph\": \"\u{2744}\",\n";
 pub const PACKAGE_JSON_LOGO: &str = "  \"logo\": \"logo.svg\",\n";
 pub const PACKAGE_JSON_LOGO_ALT: &str =
@@ -16,6 +15,9 @@ pub const PACKAGE_JSON_LICENSE: &str = "  \"license\": \"MIT\",\n";
 pub const PACKAGE_JSON_HOMEPAGE: &str = "  \"homepage\": \"https://template.fuz.dev/\",\n";
 pub const PACKAGE_JSON_REPOSITORY: &str =
     "  \"repository\": \"https://github.com/fuzdev/fuz_template\",\n";
+/// The TS twin ejector's npm script — removed on eject along with the script
+/// itself and its check test.
+pub const PACKAGE_JSON_MOLT_SCRIPT: &str = "    \"molt\": \"node src/lib/molt.ts\",\n";
 
 pub const LAYOUT_LOGO_IMPORT: &str =
     "\timport {logo_fuz_template} from '@fuzdev/fuz_ui/logos.ts';\n";
@@ -41,7 +43,7 @@ pub const TEMPLATE_REPO_URL: &str = "https://github.com/fuzdev/fuz_template";
 pub const README_H1: &str = "# @fuzdev/fuz_template \u{2744}";
 pub const CLAUDE_H1: &str = "# fuz_template\n";
 pub const CNAME_CONTENT: &str = "template.fuz.dev";
-pub const WORKSPACE_MEMBERS: &str = "members = [\"crates/app_cli\", \"crates/fuz_template\"]";
+pub const WORKSPACE_MEMBERS: &str = "members = [\"crates/app_cli\", \"crates/molt\"]";
 /// The workspace manifest's license line — stripped on eject along with the
 /// `LICENSE` file (a molted project chooses its own license).
 pub const WORKSPACE_LICENSE: &str = "license = \"MIT\"\n";
@@ -59,7 +61,7 @@ pub const APP_CLI_LICENSE: &str = "license.workspace = true\n";
 /// exact-match anchor so stripping the `rust` feature can remove it.
 pub const CI_RUST_JOB: &str = r"
   rust:
-    # molt anchors this job (crates/fuz_template/src/anchors.rs) so stripping
+    # molt anchors this job (crates/molt/src/anchors.rs) so stripping
     # the rust feature can remove it — update the anchor when editing.
     runs-on: ubuntu-latest
     timeout-minutes: 15

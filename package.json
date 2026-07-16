@@ -15,6 +15,7 @@
     "build": "gro build",
     "check": "gro check",
     "test": "gro test",
+    "molt": "node src/lib/molt.ts",
     "preview": "vite preview",
     "deploy": "gro deploy"
   },

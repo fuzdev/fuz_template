@@ -24,7 +24,7 @@ pub fn run(root: &Path) -> Result<ExitCode, CliError> {
         for issue in &issues {
             eprintln!("  {issue}");
         }
-        eprintln!("(update crates/fuz_template/src/anchors.rs or templates/ in the same change)");
+        eprintln!("(update crates/molt/src/anchors.rs or templates/ in the same change)");
         // drift is caller-must-fix, same dialect as `CliError::Drift`
         Ok(ExitCode::from(2))
     }
@@ -56,7 +56,7 @@ pub fn check_all(root: &Path) -> Result<Vec<String>, CliError> {
     );
     if live != rendered {
         issues.push(
-            "Cargo.toml: drifted from crates/fuz_template/templates/workspace_cargo.toml.in (only the members and license lines may differ)"
+            "Cargo.toml: drifted from crates/molt/templates/workspace_cargo.toml.in (only the members and license lines may differ)"
                 .to_owned(),
         );
     }

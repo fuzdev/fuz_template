@@ -4,8 +4,8 @@
 //! `--keep`/`--strip` id, and a plan fragment in `plan.rs` keyed off the
 //! resolved set. Adding a feature means adding a registry entry and its plan
 //! fragment (`check.rs`'s keep-all sample config derives from the registry,
-//! so anchor coverage follows automatically) — and joining `CRATE_FEATURES`
-//! if it contributes a workspace member crate.
+//! so anchor coverage follows automatically) — and setting `member_of` if it
+//! provides a required member (e.g. a workspace member crate).
 
 use std::collections::BTreeSet;
 
@@ -22,6 +22,10 @@ pub struct Feature {
     pub default_keep: bool,
     /// A feature this one is part of — stripping the parent strips this too.
     pub requires: Option<&'static str>,
+    /// A feature this one provides a required member for — the parent can't
+    /// be kept unless at least one of its members is kept (e.g. cargo
+    /// refuses to load a workspace with no member crates).
+    pub member_of: Option<&'static str>,
 }
 
 pub const RUST: &str = "rust";
@@ -35,26 +39,30 @@ pub const FEATURES: [Feature; 4] = [
         prompt: "keep the Rust workspace? (includes the starter CLI crate, renamed to crates/<name>)",
         default_keep: true,
         requires: None,
+        member_of: None,
     },
     Feature {
-        // the wizard skips this prompt while `cli` is the only crate feature —
+        // the wizard skips this prompt while `cli` is `rust`'s only member —
         // a kept workspace forces it, so the rust prompt covers the pair
         id: CLI,
         prompt: "keep the starter CLI crate? (renamed to crates/<name>)",
         default_keep: true,
         requires: Some(RUST),
+        member_of: Some(RUST),
     },
     Feature {
         id: DOCS,
         prompt: "keep the docs system? (src/routes/docs, auto-generated API docs)",
         default_keep: true,
         requires: None,
+        member_of: None,
     },
     Feature {
         id: GITHUB_EXTRAS,
         prompt: "keep .github/FUNDING.yml and the issue templates?",
         default_keep: false,
         requires: None,
+        member_of: None,
     },
 ];
 
@@ -134,14 +142,24 @@ pub fn cascade(kept: &mut BTreeSet<&'static str>) {
     }
 }
 
-/// Features that contribute workspace member crates. A kept `rust` needs at
-/// least one — cargo refuses to load a virtual manifest with no members.
-pub const CRATE_FEATURES: [&str; 1] = [CLI];
+/// The features that provide required members for `parent`.
+pub fn members_of(parent: &str) -> impl Iterator<Item = &'static Feature> {
+    FEATURES.iter().filter(move |f| f.member_of == Some(parent))
+}
 
-/// Whether `kept` keeps the Rust workspace with no member crates — an invalid
-/// combination the caller must reject (or repair by stripping `rust` too).
-pub fn rust_without_crates(kept: &BTreeSet<&'static str>) -> bool {
-    kept.contains(RUST) && !CRATE_FEATURES.iter().any(|id| kept.contains(id))
+/// Kept features whose required members are all stripped — invalid
+/// combinations the caller must reject (or repair by stripping the parent
+/// too). Registry order, so callers report deterministically.
+pub fn empty_groups(kept: &BTreeSet<&'static str>) -> Vec<&'static str> {
+    FEATURES
+        .iter()
+        .filter(|parent| {
+            kept.contains(parent.id)
+                && members_of(parent.id).next().is_some()
+                && !members_of(parent.id).any(|m| kept.contains(m.id))
+        })
+        .map(|parent| parent.id)
+        .collect()
 }
 
 #[cfg(test)]
@@ -183,14 +201,23 @@ mod tests {
     }
 
     #[test]
-    fn rust_without_crates_detection() {
+    fn empty_group_detection() {
         let (kept, _) = resolve(&[], &[]).unwrap();
-        assert!(!rust_without_crates(&kept));
+        assert!(empty_groups(&kept).is_empty());
         let (kept, _) = resolve(&[], &strings(&["rust"])).unwrap();
-        assert!(!rust_without_crates(&kept));
-        // stripping the last crate feature while keeping rust is the invalid
+        assert!(empty_groups(&kept).is_empty());
+        // stripping the last member feature while keeping rust is the invalid
         // combination `resolve_config` rejects
         let (kept, _) = resolve(&[], &strings(&["cli"])).unwrap();
-        assert!(rust_without_crates(&kept));
+        assert_eq!(empty_groups(&kept), vec![RUST]);
+    }
+
+    #[test]
+    fn members_derive_from_the_registry() {
+        assert_eq!(
+            members_of(RUST).map(|f| f.id).collect::<Vec<_>>(),
+            vec![CLI]
+        );
+        assert_eq!(members_of(DOCS).count(), 0);
     }
 }

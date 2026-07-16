@@ -74,12 +74,12 @@ fn locate_root() -> Result<PathBuf, CliError> {
         source,
     })?;
     loop {
-        if dir.join("package.json").is_file() && dir.join("crates/fuz_template").is_dir() {
+        if dir.join("package.json").is_file() && dir.join("crates/molt").is_dir() {
             return Ok(dir);
         }
         if !dir.pop() {
             return Err(CliError::precondition(
-                "not inside the fuz_template repo (no package.json + crates/fuz_template found)",
+                "not inside the fuz_template repo (no package.json + crates/molt found)",
                 Some("run `cargo molt` from your clone of fuz_template"),
             ));
         }
@@ -88,17 +88,18 @@ fn locate_root() -> Result<PathBuf, CliError> {
 
 /// What stands between a printed plan and applying it, given the run mode.
 ///
-/// The one combination with no gate at all is `--wetrun` on a clean tree —
-/// there `git reset --hard && git clean -fd` restores the pre-molt state
-/// (the tree was clean, so `git clean` removes only files molt created). A
-/// dirty tree (reachable only via `--force`) never applies without the
-/// dirty-specific in-the-moment confirmation — on the `--wetrun` path and
-/// the wizard path alike — and without a terminal it never applies at all:
-/// "commit first" is always available, so an override flag would just
-/// recreate the hole.
+/// A terminal always gets a confirm prompt — the wizard's answers were just
+/// typed, and one keystroke catches a typo'd name before it hits disk. The
+/// one combination with no gate at all is `--wetrun` on a clean tree without
+/// a terminal — there `git reset --hard && git clean -fd` restores the
+/// pre-molt state (the tree was clean, so `git clean` removes only files
+/// molt created). A dirty tree (reachable only via `--force`) never applies
+/// without the dirty-specific in-the-moment confirmation, and without a
+/// terminal it never applies at all: "commit first" is always available, so
+/// an override flag would just recreate the hole.
 #[derive(Debug, PartialEq, Eq)]
 enum ApplyGate {
-    /// Apply without further confirmation (clean tree + `--wetrun`).
+    /// Apply without further confirmation (clean tree + `--wetrun`, no terminal).
     Apply,
     /// Ask the standard confirm prompt.
     Confirm,
@@ -112,10 +113,10 @@ enum ApplyGate {
 
 const fn apply_gate(wetrun: bool, clean: bool, interactive: bool) -> ApplyGate {
     match (wetrun, clean, interactive) {
-        (true, true, _) => ApplyGate::Apply,
+        (_, true, true) => ApplyGate::Confirm,
         (_, false, true) => ApplyGate::ConfirmDirty,
+        (true, true, false) => ApplyGate::Apply,
         (true, false, false) => ApplyGate::RefuseDirty,
-        (false, true, true) => ApplyGate::Confirm,
         (false, _, false) => ApplyGate::DryRun,
     }
 }
@@ -282,8 +283,8 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
 
     let (mut kept, explicit) = features::resolve(&top.keep, &top.strip)?;
     if interactive {
-        // registry order puts parents before dependents, so `requires` is
-        // already decided when a dependent feature comes up
+        // registry order puts parents before dependents, so `requires` and
+        // `member_of` parents are already decided when a dependent comes up
         for feature in &features::FEATURES {
             if explicit.contains(feature.id) {
                 continue;
@@ -306,20 +307,30 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
                 kept.insert(feature.id);
                 continue;
             }
-            // cargo rejects an empty workspace, and `cli` is its only member crate
-            // TODO: generalize via `CRATE_FEATURES` when more crate features exist
-            if feature.id == features::RUST
-                && explicit.contains(features::CLI)
-                && !kept.contains(features::CLI)
+            // a parent whose members were all explicitly stripped can't be
+            // kept (e.g. cargo rejects a workspace with no member crates)
+            if features::members_of(feature.id).next().is_some()
+                && features::members_of(feature.id)
+                    .all(|m| explicit.contains(m.id) && !kept.contains(m.id))
             {
-                println!("note: --strip cli leaves the Rust workspace empty — stripping rust too");
+                let members = features::members_of(feature.id)
+                    .map(|m| m.id)
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                println!(
+                    "note: --strip {members} leaves {} without a required member — stripping it too",
+                    feature.id
+                );
                 kept.remove(feature.id);
                 continue;
             }
-            // while a feature is the only crate feature, keeping rust forces
-            // it (cargo rejects an empty workspace) — the rust prompt covers
-            // the pair, so there's no separate decision to prompt for
-            if features::CRATE_FEATURES == [feature.id] && kept.contains(features::RUST) {
+            // the sole member of a kept parent rides with the parent's
+            // prompt — the parent can't be kept without it, so there is no
+            // separate decision to prompt for
+            if let Some(parent) = feature.member_of
+                && kept.contains(parent)
+                && features::members_of(parent).count() == 1
+            {
                 kept.insert(feature.id);
                 continue;
             }
@@ -330,26 +341,30 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
             }
         }
         features::cascade(&mut kept);
+        // a kept parent with every member declined can't build — repair the
+        // wizard case (all choices came from prompts); explicit flags are
+        // rejected below instead. unreachable while every group has a sole
+        // member (the wizard skips that prompt); kept for when a second
+        // member returns the prompts
+        for parent in features::empty_groups(&kept) {
+            if explicit.contains(parent)
+                || features::members_of(parent).any(|m| explicit.contains(m.id))
+            {
+                continue;
+            }
+            println!("note: declining every member of {parent} leaves it empty — stripping it too");
+            kept.remove(parent);
+            features::cascade(&mut kept);
+        }
     }
-    // a kept rust workspace with no member crates can't build — repair the
-    // wizard case (both choices came from prompts), reject explicit flags.
-    // unreachable while `CRATE_FEATURES` has one member (the wizard skips
-    // that prompt); kept for when a second crate feature returns the prompts
-    if interactive
-        && features::rust_without_crates(&kept)
-        && !explicit.contains(features::RUST)
-        && !explicit.contains(features::CLI)
-    {
-        println!(
-            "note: declining the starter crate leaves the Rust workspace empty — stripping rust too"
-        );
-        kept.remove(features::RUST);
-        features::cascade(&mut kept);
-    }
-    if features::rust_without_crates(&kept) {
-        return Err(CliError::Usage(
-            "a kept Rust workspace would have no crates (cargo rejects an empty workspace) — keep cli, or strip rust too".to_owned(),
-        ));
+    if let Some(&parent) = features::empty_groups(&kept).first() {
+        let members = features::members_of(parent)
+            .map(|m| m.id)
+            .collect::<Vec<_>>()
+            .join(", ");
+        return Err(CliError::Usage(format!(
+            "keeping {parent} requires at least one of its member features ({members}) — keep one, or strip {parent} too"
+        )));
     }
 
     Ok(MoltConfig {
@@ -413,18 +428,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn apply_gate_only_clean_wetrun_applies_ungated() {
-        assert_eq!(apply_gate(true, true, true), ApplyGate::Apply);
+    fn apply_gate_only_headless_clean_wetrun_applies_ungated() {
         assert_eq!(apply_gate(true, true, false), ApplyGate::Apply);
+        // a terminal always confirms, even with --wetrun — the wizard's
+        // answers were just typed, so one keystroke catches a typo
+        assert_eq!(apply_gate(true, true, true), ApplyGate::Confirm);
+        assert_eq!(apply_gate(false, true, true), ApplyGate::Confirm);
         // a dirty tree never applies without the dirty-specific confirmation
-        // (the wizard's confirm can apply too, so it gets the same warning)
         assert_eq!(apply_gate(true, false, true), ApplyGate::ConfirmDirty);
         assert_eq!(apply_gate(false, false, true), ApplyGate::ConfirmDirty);
         // ...and never at all without a terminal
         assert_eq!(apply_gate(true, false, false), ApplyGate::RefuseDirty);
-        // a clean interactive run confirms; non-interactive without --wetrun
-        // never writes
-        assert_eq!(apply_gate(false, true, true), ApplyGate::Confirm);
+        // non-interactive without --wetrun never writes
         assert_eq!(apply_gate(false, true, false), ApplyGate::DryRun);
         assert_eq!(apply_gate(false, false, false), ApplyGate::DryRun);
     }

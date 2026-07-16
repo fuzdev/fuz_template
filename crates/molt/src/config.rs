@@ -50,7 +50,7 @@ pub fn validate_name(name: &str) -> Result<(), CliError> {
             "name {name:?} can't be used as a crate name (Rust keyword or built-in) — pick another"
         )));
     }
-    if matches!(name, "fuz_template" | "app_cli" | "xtask") {
+    if matches!(name, "fuz_template" | "app_cli" | "molt" | "xtask") {
         return Err(CliError::Usage(format!(
             "name {name:?} is reserved — pick your own project name"
         )));
@@ -69,19 +69,39 @@ pub fn validate_description(description: &str) -> Result<(), CliError> {
     Ok(())
 }
 
-/// Validates an npm package name loosely (scoped names like `@you/name` allowed).
+/// Validates an npm package name (scoped names like `@you/name` allowed):
+/// lowercase url-safe characters, no `.`/`_` prefix, npm's 214-char limit.
 pub fn validate_npm_name(name: &str) -> Result<(), CliError> {
-    let valid = !name.is_empty()
-        && name.chars().all(|c| {
-            c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '-' | '_' | '.' | '/' | '@')
-        });
-    if valid {
+    let invalid = || CliError::Usage(format!("invalid npm package name {name:?}"));
+    if name.len() > 214 {
+        return Err(invalid());
+    }
+    let bare = if let Some(rest) = name.strip_prefix('@') {
+        let Some((scope, bare)) = rest.split_once('/') else {
+            return Err(invalid());
+        };
+        if !npm_name_part_is_valid(scope) {
+            return Err(invalid());
+        }
+        bare
+    } else {
+        name
+    };
+    if npm_name_part_is_valid(bare) {
         Ok(())
     } else {
-        Err(CliError::Usage(format!(
-            "invalid npm package name {name:?}"
-        )))
+        Err(invalid())
     }
+}
+
+/// Whether a scope or bare package name is valid on its own.
+fn npm_name_part_is_valid(part: &str) -> bool {
+    !part.is_empty()
+        && !part.starts_with('.')
+        && !part.starts_with('_')
+        && part
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '-' | '.' | '_'))
 }
 
 /// Validates a bare domain like `example.com` (no scheme, no path).
@@ -133,6 +153,7 @@ mod tests {
         assert!(validate_name("").is_err());
         assert!(validate_name("fuz_template").is_err());
         assert!(validate_name("app_cli").is_err());
+        assert!(validate_name("molt").is_err());
         // Rust keywords and `test` can't be crate names
         assert!(validate_name("match").is_err());
         assert!(validate_name("loop").is_err());
@@ -153,8 +174,18 @@ mod tests {
     fn npm_name_validation() {
         assert!(validate_npm_name("my_app").is_ok());
         assert!(validate_npm_name("@you/my-app").is_ok());
+        assert!(validate_npm_name("my.app2").is_ok());
         assert!(validate_npm_name("").is_err());
         assert!(validate_npm_name("My App").is_err());
+        // scope and bare parts are each validated on their own
+        assert!(validate_npm_name("@/my-app").is_err());
+        assert!(validate_npm_name("@you/").is_err());
+        assert!(validate_npm_name("@you").is_err());
+        assert!(validate_npm_name("a@b/c").is_err());
+        assert!(validate_npm_name("you/my-app").is_err());
+        assert!(validate_npm_name(".hidden").is_err());
+        assert!(validate_npm_name("_private").is_err());
+        assert!(validate_npm_name(&"a".repeat(215)).is_err());
     }
 
     #[test]

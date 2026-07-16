@@ -42,7 +42,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "fuz_template"
+name = "molt"
 version = "0.0.1"
 dependencies = [
  "argh",

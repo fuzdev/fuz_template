@@ -37,8 +37,8 @@ pub struct TopLevel {
     #[argh(option)]
     pub strip: Vec<String>,
 
-    /// apply the plan (without it, non-interactive runs write nothing and
-    /// the wizard asks before applying)
+    /// apply the plan when non-interactive (without it, non-interactive runs
+    /// write nothing; a terminal always confirms before applying)
     #[argh(switch)]
     pub wetrun: bool,
 

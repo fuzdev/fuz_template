@@ -33,7 +33,7 @@ dev server.
 - Svelte 5 - component framework with runes
 - SvelteKit - application framework with static adapter
 - Vite - build tool
-- fuz_css (@fuzdev/fuz_css) - CSS framework and design system
+- fuz_css (@fuzdev/fuz_css) - semantic-first CSS framework and design system
 - fuz_ui (@fuzdev/fuz_ui) - UI components, theming, docs system
 - fuz_util (@fuzdev/fuz_util) - utility functions
 - fuz_code (@fuzdev/fuz_code) - syntax highlighting
@@ -68,7 +68,7 @@ npm i
 Then transform it into your own project with molt (see below):
 
 ```bash
-cargo molt
+npm run molt # or `cargo molt`
 ```
 
 **Files molt customizes (or do it by hand):**
@@ -90,14 +90,19 @@ until you run `npm i`.
 
 ## molt (self-eject CLI)
 
-`crates/fuz_template` is molt — a one-shot wizard that personalizes the
-clone and then deletes itself (like create-react-app's eject, or a spider
-shedding its skin). Invoked via the cargo alias in `.cargo/config.toml`:
+molt is a one-shot wizard that personalizes the clone and then deletes
+itself (like create-react-app's eject, or a spider shedding its skin). It
+ships as **twin implementations** at full behavior parity — same flags, same
+wizard, byte-identical output — so ejecting never requires a toolchain you
+don't have: `src/lib/molt.ts` (run via `npm run molt`) and the `molt` crate
+(run via the cargo alias in `.cargo/config.toml`).
 
 ```bash
-cargo molt         # interactive wizard: prompts, prints the plan, confirms
-cargo molt check   # verify molt's anchors still match the template
-cargo molt --help  # all flags, for non-interactive use
+npm run molt           # interactive wizard: prompts, prints the plan, confirms
+npm run molt -- check  # verify molt's anchors still match the template
+npm run molt -- --help # all flags, for non-interactive use
+cargo molt             # the Rust twin: same flags, same behavior
+cargo molt check
 ```
 
 Key behaviors:
@@ -109,8 +114,9 @@ Key behaviors:
   Applying to a dirty tree (only reachable via `--force`) always demands the
   dirty-specific in-the-moment confirmation — on the `--wetrun` path and the
   wizard path alike; `--wetrun` alone never skips it, and without a terminal
-  the dirty apply is refused (exit 2). The only ungated write path is
-  `--wetrun` on a clean tree.
+  the dirty apply is refused (exit 2). A terminal always confirms before
+  applying, even with `--wetrun` — the only ungated write path is `--wetrun`
+  on a clean tree without a terminal.
 - **Plan-then-apply**: every file edit is anchored on exact current content;
   one unmatched anchor aborts before any write, and anchors re-verify after
   a confirm prompt, immediately before writing. Non-interactive runs write
@@ -126,28 +132,37 @@ Key behaviors:
   kept copies are personalized with funding placeholders and discussion
   links pointed at your repo url).
   One prompt each in the wizard — except `cli`, which rides with the `rust`
-  prompt while it's the only crate feature (a kept workspace needs a member
-  crate, so there is no separate decision) — or `--keep`/`--strip` id lists
-  (comma-separated or repeated). Stripping `rust` cascades to `cli`;
-  stripping `cli` while keeping `rust` is rejected (cargo can't load an
-  empty workspace), and a prompt whose answer explicit flags already force
-  (`--keep cli` forces the workspace, `--strip cli` forces stripping rust)
-  is skipped with a note.
+  prompt while it's `rust`'s only member feature (a kept workspace needs a
+  member crate, so there is no separate decision; the `member_of` registry
+  field generalizes this) — or `--keep`/`--strip` id lists (comma-separated
+  or repeated). Stripping `rust` cascades to `cli`; stripping `cli` while
+  keeping `rust` is rejected (cargo can't load an empty workspace), and a
+  prompt whose answer explicit flags already force (`--keep cli` forces the
+  workspace, `--strip cli` forces stripping rust) is skipped with a note.
   `.cargo/` (which holds only the `cargo molt` alias) and the MIT `LICENSE`
   + `license` fields are deleted unconditionally — the license is fuz.dev's,
   not the new project's, so keeping it is never right (same reasoning as the
   personalized github-extras). The registry lives in
-  `crates/fuz_template/src/features.rs` — new features are one entry + a
-  plan fragment there (the check sample configs derive from the registry).
+  `crates/molt/src/features.rs` and its TS twin in `molt.ts` — new features
+  are one entry + a plan fragment in each twin (the check sample configs
+  derive from the registry).
 - **Identity fields**: name (required), npm name, description, domain,
   repo url — derived from the git origin when it isn't the template's.
-- **Self-verifying**: `cargo molt check` and the crate's tests verify every
-  anchor against the working tree — and that the embedded workspace manifest
-  template stays byte-identical to the live root `Cargo.toml` apart from the
-  members line — so a template edit that would break ejection fails
-  `cargo test` (and CI) at the same commit. When you edit an anchored file,
-  update `crates/fuz_template/src/anchors.rs` (and the embedded templates in
-  `crates/fuz_template/templates/`) in the same change.
+- **Self-verifying**: `cargo molt check` / `npm run molt -- check` and both
+  twins' tests verify every anchor against the working tree — and that the
+  workspace manifest template stays byte-identical to the live root
+  `Cargo.toml` apart from the members and license lines — so a template edit
+  that would break ejection fails `cargo test` and `gro test` (and CI) at
+  the same commit. When you edit an anchored file, update the anchors in
+  `crates/molt/src/anchors.rs` **and** `molt.ts` (and the shared output
+  templates in `crates/molt/templates/`) in the same change.
+- **Twin discipline**: the twins share identifier-level naming
+  (`build_plan`/`verify`/`apply`/`apply_gate`/`FEATURES`…) and `molt.ts`'s
+  sections mirror the crate's module seams. The output templates are
+  single-sourced in `crates/molt/templates/` (compiled into the Rust binary
+  via `include_str!`, read at runtime by the TS twin). Each twin's plan
+  deletes both implementations — the crate, `molt.ts`, `molt.test.ts`, and
+  the `molt` npm script — so a molted project ships neither.
 
 ## Rust workspace
 
@@ -178,16 +193,18 @@ argh with an explicit `from_args` so usage errors exit `2`.
 Cargo.toml                 # Rust workspace (lints, profile, deps)
 crates/
 ├── app_cli/               # starter CLI crate — molt renames it to yours
-└── fuz_template/          # molt — the self-eject CLI (deletes itself)
+└── molt/                  # molt's Rust twin — the self-eject CLI (deletes itself)
     ├── src/               # plan/verify/apply, wizard, features, anchors
-    └── templates/         # embedded output templates (*.in)
+    └── templates/         # output templates (*.in), shared by both twins
 src/
 ├── app.html               # HTML entry with theme detection
 ├── lib/                   # your library code
 │   ├── Mreows.svelte      # example component (replace me)
-│   └── Positioned.svelte  # example component (replace me)
+│   ├── Positioned.svelte  # example component (replace me)
+│   └── molt.ts            # molt's TS twin — `npm run molt` (deletes itself)
 ├── test/
-│   └── example.test.ts    # test file example
+│   ├── example.test.ts    # test file example
+│   └── molt.test.ts       # molt TS twin checks: anchors + apply samples
 └── routes/
     ├── +layout.svelte     # root layout with fuz_css imports
     ├── +layout.ts         # prerender: true, ssr: true
@@ -279,7 +296,8 @@ Deploy with `gro deploy` (builds and pushes to deploy branch).
 
 - **Demo components only** - Mreows and Positioned are examples, not for
   production use
-- **Minimal test coverage** - Only one example test file included
+- **Minimal test coverage** - One example test file; the rest of the suite
+  covers molt, which deletes itself on eject
 - **Static only** - No dynamic server-side content
 
 ## Project standards
@@ -293,7 +311,7 @@ Deploy with `gro deploy` (builds and pushes to deploy branch).
 
 ## Related projects
 
-- [`fuz_css`](../fuz_css/CLAUDE.md) - CSS framework
+- [`fuz_css`](../fuz_css/CLAUDE.md) - semantic-first CSS framework
 - [`fuz_ui`](../fuz_ui/CLAUDE.md) - UI components and docs system
 - [`fuz_util`](../fuz_util/CLAUDE.md) - utility functions
 - [`fuz_blog`](../fuz_blog/CLAUDE.md) - extends template with blog features

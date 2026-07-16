@@ -147,9 +147,15 @@ mod tests {
         assert!(!dir.join("LICENSE").exists());
         assert!(!package_json.contains("\"license\""));
 
+        // the TS twin ejector never ships either
+        assert!(!package_json.contains("\"molt\""));
+        assert!(!dir.join("src/lib/molt.ts").exists());
+        assert!(!dir.join("src/test/molt.test.ts").exists());
+
         let layout = read(&dir, "src/routes/+layout.svelte");
         assert!(!layout.contains("logo_fuz_template"));
-        assert!(layout.contains("<title>@sample/sample_app</title>"));
+        // the title carries the project name, not the scoped npm name
+        assert!(layout.contains("<title>sample_app</title>"));
 
         let page = read(&dir, "src/routes/+page.svelte");
         assert!(!page.contains("Mreows"));
@@ -189,7 +195,7 @@ mod tests {
         let workspace = read(&dir, "Cargo.toml");
         assert!(workspace.contains("members = [\"crates/sample_app\"]"));
         assert!(!workspace.contains("license"));
-        assert!(!dir.join("crates/fuz_template").exists());
+        assert!(!dir.join("crates/molt").exists());
         assert!(!dir.join("crates/app_cli").exists());
         assert!(!dir.join(".cargo").exists());
         let crate_manifest = read(&dir, "crates/sample_app/Cargo.toml");
@@ -222,8 +228,11 @@ mod tests {
         assert!(!package_json.contains("homepage"));
         assert!(!package_json.contains("repository"));
         assert!(!package_json.contains("\"license\""));
+        assert!(!package_json.contains("\"molt\""));
         assert!(!dir.join("static/CNAME").exists());
         assert!(!dir.join("LICENSE").exists());
+        assert!(!dir.join("src/lib/molt.ts").exists());
+        assert!(!dir.join("src/test/molt.test.ts").exists());
 
         assert!(!dir.join("Cargo.toml").exists());
         assert!(!dir.join("Cargo.lock").exists());

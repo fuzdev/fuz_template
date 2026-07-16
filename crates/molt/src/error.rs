@@ -23,7 +23,7 @@ pub enum CliError {
     /// The tree no longer matches molt's anchors — usually the clone was
     /// hand-edited (restorable by the caller), else the template itself
     /// drifted (`molt check` reports that as its own failure).
-    #[error("template drift detected:\n{0}")]
+    #[error("these files no longer match what molt expects:\n{0}")]
     Drift(String),
 
     /// Filesystem failure while planning or applying.

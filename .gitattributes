@@ -1,0 +1,3 @@
+# Force LF on checkout everywhere: molt's exact-content anchors embed `\n`,
+# so a CRLF working tree (e.g. Windows autocrlf) would fail every anchor.
+* text=auto eol=lf

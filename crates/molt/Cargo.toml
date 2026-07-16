@@ -1,5 +1,5 @@
 [package]
-name = "fuz_template"
+name = "molt"
 description = "molt — transforms this template clone into your own project, then deletes itself"
 version.workspace = true
 edition.workspace = true

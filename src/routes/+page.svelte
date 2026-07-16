@@ -32,8 +32,8 @@
 			This is the deployed demo of
 			<a href="https://github.com/fuzdev/fuz_template">fuz_template</a>, a starter for building web
 			and native apps and tools with the <a href="https://www.fuz.dev/">fuz stack</a>. Clone it (or
-			use GitHub's "Use this template"), then run <code>cargo molt</code> to personalize it — the readme
-			also covers a manual path that skips Rust.
+			use GitHub's "Use this template"), then run <code>npm run molt</code> (or its Rust twin
+			<code>cargo molt</code>) to personalize it — the readme also covers a manual path.
 		</p>
 	</section>
 	<section class="box panel">

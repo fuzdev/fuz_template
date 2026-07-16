@@ -116,6 +116,22 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
     plan.push(Action::DeleteFile {
         path: PathBuf::from("LICENSE"),
     });
+
+    // the TS twin ejector (`npm run molt`) is template machinery, deleted on
+    // eject like molt's own crate — the script, its npm entry, and its check
+    // test (which verifies anchors that no longer match once molted)
+    plan.push(replace_once(
+        "package.json",
+        anchors::PACKAGE_JSON_MOLT_SCRIPT,
+        String::new(),
+        "remove the molt script",
+    ));
+    plan.push(Action::DeleteFile {
+        path: PathBuf::from("src/lib/molt.ts"),
+    });
+    plan.push(Action::DeleteFile {
+        path: PathBuf::from("src/test/molt.test.ts"),
+    });
     let homepage_replacement = config.domain.as_ref().map_or_else(String::new, |domain| {
         format!("  \"homepage\": \"https://{domain}/\",\n")
     });
@@ -162,11 +178,13 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
         anchors::LAYOUT_SITE_STATE_REPLACEMENT,
         "drop template icon",
     ));
+    // the project name, not the npm name — a scoped `@you/app` reads badly
+    // in a browser tab
     plan.push(replace_once(
         "src/routes/+layout.svelte",
         anchors::LAYOUT_TITLE,
-        format!("<title>{npm_name}</title>"),
-        format!("title \u{2192} {npm_name}"),
+        format!("<title>{name}</title>"),
+        format!("title \u{2192} {name}"),
     ));
 
     // starter page + demo components
@@ -313,8 +331,8 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
     }
 
     // the Rust workspace, and molt's own crate; `cli` is always kept here —
-    // `resolve_config` rejects a kept `rust` with no member crates, since
-    // cargo refuses to load an empty workspace
+    // `resolve_config` rejects a kept `rust` with an empty member group,
+    // since cargo refuses to load an empty workspace
     if config.keeps(features::RUST) {
         let members = format!("\"crates/{name}\"");
         plan.push(Action::ReplaceFile {
@@ -362,7 +380,7 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
             to: PathBuf::from(format!("crates/{name}")),
         });
         plan.push(Action::DeleteDir {
-            path: PathBuf::from("crates/fuz_template"),
+            path: PathBuf::from("crates/molt"),
         });
     } else {
         plan.push(replace_once(
@@ -389,7 +407,14 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
         path: PathBuf::from(".cargo"),
     });
 
-    plan
+    // deletes run after every edit and rename, so a mid-apply failure on the
+    // `--force` dirty path (the one with no clean undo point) strands as
+    // little as possible
+    let (deletes, mut ordered): (Vec<_>, Vec<_>) = plan
+        .into_iter()
+        .partition(|action| matches!(action, Action::DeleteFile { .. } | Action::DeleteDir { .. }));
+    ordered.extend(deletes);
+    ordered
 }
 
 /// Verifies every action's preconditions against the tree at `root`,
