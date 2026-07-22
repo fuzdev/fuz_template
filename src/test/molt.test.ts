@@ -3,11 +3,11 @@
 // template edit that would break `npm run molt` fails `gro test` (and CI) at
 // the same commit, exactly like the Rust twin fails `cargo test`.
 
-import {cpSync, copyFileSync, existsSync, mkdirSync, readFileSync, rmSync} from 'node:fs';
-import {tmpdir} from 'node:os';
-import {join} from 'node:path';
-import {fileURLToPath} from 'node:url';
-import {assert, describe, test} from 'vitest';
+import { cpSync, copyFileSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { assert, describe, test } from 'vitest';
 
 import {
 	CLI,
@@ -31,7 +31,7 @@ import {
 	validate_domain,
 	validate_name,
 	validate_npm_name,
-	verify,
+	verify
 } from '../lib/molt.ts';
 
 const repo_root = fileURLToPath(new URL('../..', import.meta.url));
@@ -39,7 +39,7 @@ const repo_root = fileURLToPath(new URL('../..', import.meta.url));
 /** Copies the parts of the repo that molt touches into a scratch dir. */
 const copy_template = (destination: string): void => {
 	for (const dir of ['src', 'static', '.github', '.cargo', 'crates']) {
-		cpSync(join(repo_root, dir), join(destination, dir), {recursive: true});
+		cpSync(join(repo_root, dir), join(destination, dir), { recursive: true });
 	}
 	for (const file of [
 		'package.json',
@@ -50,7 +50,7 @@ const copy_template = (destination: string): void => {
 		'Cargo.toml',
 		'Cargo.lock',
 		'rust-toolchain.toml',
-		'clippy.toml',
+		'clippy.toml'
 	]) {
 		copyFileSync(join(repo_root, file), join(destination, file));
 	}
@@ -58,8 +58,8 @@ const copy_template = (destination: string): void => {
 
 const scratch_dir = (label: string): string => {
 	const dir = join(tmpdir(), `fuz_template_molt_test_ts_${label}_${process.pid}`);
-	rmSync(dir, {recursive: true, force: true});
-	mkdirSync(dir, {recursive: true});
+	rmSync(dir, { recursive: true, force: true });
+	mkdirSync(dir, { recursive: true });
 	return dir;
 };
 
@@ -151,7 +151,7 @@ describe('apply', () => {
 		assert.ok(!main_rs.includes('app_cli'));
 		assert.ok(!read(dir, 'crates/sample_app/src/error.rs').includes('app_cli'));
 
-		rmSync(dir, {recursive: true});
+		rmSync(dir, { recursive: true });
 	});
 
 	test('strip-rust sample', () => {
@@ -205,7 +205,7 @@ describe('apply', () => {
 		assert.ok(!claude.includes('## Rust workspace'));
 		assert.ok(!claude.includes('src/routes/docs'));
 
-		rmSync(dir, {recursive: true});
+		rmSync(dir, { recursive: true });
 	});
 });
 
@@ -229,13 +229,13 @@ describe('apply_gate', () => {
 
 describe('features', () => {
 	test('defaults', () => {
-		const {kept, explicit} = resolve([], []);
+		const { kept, explicit } = resolve([], []);
 		assert.deepEqual(Array.from(kept).sort(), [CLI, DOCS, RUST]);
 		assert.strictEqual(explicit.size, 0);
 	});
 
 	test('csv and repeats', () => {
-		const {kept} = resolve(['github-extras,docs'], ['cli']);
+		const { kept } = resolve(['github-extras,docs'], ['cli']);
 		assert.ok(kept.has(GITHUB_EXTRAS));
 		assert.ok(kept.has(DOCS));
 		assert.ok(kept.has(RUST));
@@ -243,7 +243,7 @@ describe('features', () => {
 	});
 
 	test('strip rust cascades to cli', () => {
-		const {kept} = resolve([], ['rust']);
+		const { kept } = resolve([], ['rust']);
 		assert.ok(!kept.has(RUST));
 		assert.ok(!kept.has(CLI));
 	});
@@ -265,7 +265,7 @@ describe('features', () => {
 	test('members derive from the registry', () => {
 		assert.deepEqual(
 			members_of(RUST).map((f) => f.id),
-			[CLI],
+			[CLI]
 		);
 		assert.strictEqual(members_of(DOCS).length, 0);
 		assert.strictEqual(FEATURES.length, 4);
@@ -339,9 +339,9 @@ describe('templates', () => {
 		assert.strictEqual(
 			render('a __X__ b __Y__', [
 				['__X__', '__Y__'],
-				['__Y__', 'z'],
+				['__Y__', 'z']
 			]),
-			'a __Y__ b z',
+			'a __Y__ b z'
 		);
 	});
 });
@@ -350,19 +350,19 @@ describe('git', () => {
 	test('remote url normalization', () => {
 		assert.strictEqual(
 			normalize_remote_url('git@github.com:you/app.git\n'),
-			'https://github.com/you/app',
+			'https://github.com/you/app'
 		);
 		assert.strictEqual(
 			normalize_remote_url('https://github.com/you/app.git'),
-			'https://github.com/you/app',
+			'https://github.com/you/app'
 		);
 		assert.strictEqual(
 			normalize_remote_url('https://github.com/you/app'),
-			'https://github.com/you/app',
+			'https://github.com/you/app'
 		);
 		assert.strictEqual(
 			normalize_remote_url('ssh://git@github.com/you/app.git'),
-			'https://github.com/you/app',
+			'https://github.com/you/app'
 		);
 		assert.strictEqual(normalize_remote_url('git@github.com:fuzdev/fuz_template.git'), null);
 		assert.strictEqual(normalize_remote_url('https://github.com/fuzdev/fuz_template'), null);

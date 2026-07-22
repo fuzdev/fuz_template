@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {onMount, type Snippet} from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
 
 	// TODO what should the name/scope of this component be?
 
@@ -7,7 +7,7 @@
 		x,
 		y,
 		scale,
-		children,
+		children
 	}: {
 		x: number;
 		y: number;

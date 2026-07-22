@@ -43,8 +43,8 @@
     "eslint-plugin-svelte": "^3.13.1",
     "esm-env": "^1.2.2",
     "magic-string": "^0.30.21",
-    "prettier": "^3.7.4",
-    "prettier-plugin-svelte": "^3.5.1",
+    "prettier": "^3.9.6",
+    "prettier-plugin-svelte": "^4.1.1",
     "svelte": "^5.56.4",
     "svelte-check": "^4.7.2",
     "svelte-docinfo": "^0.5.3",
@@ -64,7 +64,8 @@
     "useTabs": true,
     "printWidth": 100,
     "singleQuote": true,
-    "bracketSpacing": false,
+    "bracketSpacing": true,
+    "trailingComma": "none",
     "overrides": [
       {
         "files": "package.json",

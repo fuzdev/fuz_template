@@ -1,16 +1,16 @@
 <script lang="ts">
 	import Svg from '@fuzdev/fuz_ui/Svg.svelte';
-	import {logo_fuz} from '@fuzdev/fuz_ui/logos.ts';
-	import {resolve} from '$app/paths';
-	import {random_item} from '@fuzdev/fuz_util/random.ts';
+	import { logo_fuz } from '@fuzdev/fuz_ui/logos.ts';
+	import { resolve } from '$app/paths';
+	import { random_item } from '@fuzdev/fuz_util/random.ts';
 	import ColorSchemeInput from '@fuzdev/fuz_ui/ColorSchemeInput.svelte';
 	import ThemeInput from '@fuzdev/fuz_ui/ThemeInput.svelte';
 
-	import Mreows, {mreow_items} from '$lib/Mreows.svelte';
+	import Mreows, { mreow_items } from '$lib/Mreows.svelte';
 
-	let mreows: Array<{glyph: string}> | undefined = $state.raw([
+	let mreows: Array<{ glyph: string }> | undefined = $state.raw([
 		random_item(mreow_items),
-		mreow_items[4]!,
+		mreow_items[4]!
 	]);
 </script>
 

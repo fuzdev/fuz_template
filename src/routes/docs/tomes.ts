@@ -1,4 +1,4 @@
-import type {Tome} from '@fuzdev/fuz_ui/tome.ts';
+import type { Tome } from '@fuzdev/fuz_ui/tome.ts';
 import ApiPage from './api/+page.svelte';
 import LibraryPage from './library/+page.svelte';
 
@@ -9,7 +9,7 @@ export const tomes: Array<Tome> = [
 		Component: ApiPage,
 		related_tomes: [],
 		related_modules: [],
-		related_declarations: [],
+		related_declarations: []
 	},
 	{
 		slug: 'library',
@@ -17,6 +17,6 @@ export const tomes: Array<Tome> = [
 		Component: LibraryPage,
 		related_tomes: [],
 		related_modules: [],
-		related_declarations: [],
-	},
+		related_declarations: []
+	}
 ];

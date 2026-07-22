@@ -4,42 +4,42 @@
 	}
 
 	export const mreow_items: Array<Mreow> = [
-		{glyph: '🐵'},
-		{glyph: '🐶'},
-		{glyph: '🐺'},
-		{glyph: '🦊'},
-		{glyph: '🐱'},
-		{glyph: '🦁'},
-		{glyph: '🐯'},
-		{glyph: '🐴'},
-		{glyph: '🦄'},
-		{glyph: '🦓'},
-		{glyph: '🐮'},
-		{glyph: '🐭'},
-		{glyph: '🐹'},
-		{glyph: '🐰'},
-		{glyph: '🐻'},
-		{glyph: '🐼'},
-		{glyph: '🐸'},
-		{glyph: '🐲'},
+		{ glyph: '🐵' },
+		{ glyph: '🐶' },
+		{ glyph: '🐺' },
+		{ glyph: '🦊' },
+		{ glyph: '🐱' },
+		{ glyph: '🦁' },
+		{ glyph: '🐯' },
+		{ glyph: '🐴' },
+		{ glyph: '🦄' },
+		{ glyph: '🦓' },
+		{ glyph: '🐮' },
+		{ glyph: '🐭' },
+		{ glyph: '🐹' },
+		{ glyph: '🐰' },
+		{ glyph: '🐻' },
+		{ glyph: '🐼' },
+		{ glyph: '🐸' },
+		{ glyph: '🐲' }
 	];
 </script>
 
 <script lang="ts">
-	import {random_item} from '@fuzdev/fuz_util/random.ts';
+	import { random_item } from '@fuzdev/fuz_util/random.ts';
 
 	import Positioned from './Positioned.svelte';
 
 	// don't use this component, it's just a hacky demo
 
 	let {
-		mreows = $bindable([]),
+		mreows = $bindable([])
 	}: {
 		mreows?: Array<Mreow>;
 	} = $props();
 
 	const mreow = (): void => {
-		mreows = [{...random_item(mreow_items)}].concat(mreows);
+		mreows = [{ ...random_item(mreow_items) }].concat(mreows);
 	};
 
 	const COLUMN_COUNT = 5;
@@ -73,7 +73,7 @@
 				column,
 				scale: 1,
 				mreow,
-				font_size: column_width * ICON_SCALE,
+				font_size: column_width * ICON_SCALE
 			};
 		});
 	};
@@ -81,7 +81,7 @@
 	let clientWidth: number | undefined = $state.raw();
 
 	const layout: Array<LayoutItem> = $derived(
-		clientWidth === undefined ? [] : create_layout(mreows.slice(1), clientWidth),
+		clientWidth === undefined ? [] : create_layout(mreows.slice(1), clientWidth)
 	);
 </script>
 

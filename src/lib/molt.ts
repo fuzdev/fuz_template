@@ -12,7 +12,7 @@
 // When you edit an anchored spot in the template, update the anchors on both
 // sides in the same change.
 
-import {spawnSync} from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import {
 	existsSync,
 	readFileSync,
@@ -20,12 +20,12 @@ import {
 	rmSync,
 	statSync,
 	unlinkSync,
-	writeFileSync,
+	writeFileSync
 } from 'node:fs';
-import {dirname, join} from 'node:path';
+import { dirname, join } from 'node:path';
 import * as readline from 'node:readline/promises';
-import {pathToFileURL} from 'node:url';
-import {parseArgs} from 'node:util';
+import { pathToFileURL } from 'node:url';
+import { parseArgs } from 'node:util';
 
 /* error — twin of `crates/molt/src/error.rs` */
 
@@ -60,7 +60,7 @@ export class CliError extends Error {
 		return new CliError(
 			'drift',
 			`these files no longer match what molt expects:\n${issues.join('\n')}`,
-			'restore the listed files (e.g. git checkout) or run from a fresh clone',
+			'restore the listed files (e.g. git checkout) or run from a fresh clone'
 		);
 	}
 
@@ -148,7 +148,7 @@ const RESERVED_CRATE_NAMES = [
 	'virtual',
 	'where',
 	'while',
-	'yield',
+	'yield'
 ];
 
 /**
@@ -160,12 +160,12 @@ export const validate_name = (name: string): void => {
 	const valid = /^[a-z][a-z0-9_]*$/.test(name);
 	if (!valid) {
 		throw CliError.usage(
-			`invalid name ${JSON.stringify(name)}: use snake_case starting with a letter (e.g. my_app)`,
+			`invalid name ${JSON.stringify(name)}: use snake_case starting with a letter (e.g. my_app)`
 		);
 	}
 	if (RESERVED_CRATE_NAMES.includes(name)) {
 		throw CliError.usage(
-			`name ${JSON.stringify(name)} can't be used as a crate name (Rust keyword or built-in) — pick another`,
+			`name ${JSON.stringify(name)} can't be used as a crate name (Rust keyword or built-in) — pick another`
 		);
 	}
 	if (name === 'fuz_template' || name === 'app_cli' || name === 'molt' || name === 'xtask') {
@@ -223,7 +223,7 @@ export const validate_domain = (domain: string): void => {
 	const valid = domain.length > 0 && domain.includes('.') && /^[a-z0-9.-]+$/.test(domain);
 	if (!valid) {
 		throw CliError.usage(
-			`invalid domain ${JSON.stringify(domain)}: expected a bare domain like example.com`,
+			`invalid domain ${JSON.stringify(domain)}: expected a bare domain like example.com`
 		);
 	}
 };
@@ -277,7 +277,7 @@ export const FEATURES: Array<Feature> = [
 		prompt: 'keep the Rust workspace? (includes the starter CLI crate, renamed to crates/<name>)',
 		default_keep: true,
 		requires: null,
-		member_of: null,
+		member_of: null
 	},
 	{
 		// the wizard skips this prompt while `cli` is `rust`'s only member —
@@ -286,22 +286,22 @@ export const FEATURES: Array<Feature> = [
 		prompt: 'keep the starter CLI crate? (renamed to crates/<name>)',
 		default_keep: true,
 		requires: RUST,
-		member_of: RUST,
+		member_of: RUST
 	},
 	{
 		id: DOCS,
 		prompt: 'keep the docs system? (src/routes/docs, auto-generated API docs)',
 		default_keep: true,
 		requires: null,
-		member_of: null,
+		member_of: null
 	},
 	{
 		id: GITHUB_EXTRAS,
 		prompt: 'keep .github/FUNDING.yml and the issue templates?',
 		default_keep: false,
 		requires: null,
-		member_of: null,
-	},
+		member_of: null
+	}
 ];
 
 /**
@@ -318,7 +318,7 @@ export const parse_ids = (values: Array<string>): Array<string> => {
 			const feature = FEATURES.find((f) => f.id === trimmed);
 			if (!feature) {
 				throw CliError.usage(
-					`unknown feature ${JSON.stringify(trimmed)} — valid: ${FEATURES.map((f) => f.id).join(', ')}`,
+					`unknown feature ${JSON.stringify(trimmed)} — valid: ${FEATURES.map((f) => f.id).join(', ')}`
 				);
 			}
 			ids.push(feature.id);
@@ -336,8 +336,8 @@ export const parse_ids = (values: Array<string>): Array<string> => {
  */
 export const resolve = (
 	keep: Array<string>,
-	strip: Array<string>,
-): {kept: Set<string>; explicit: Set<string>} => {
+	strip: Array<string>
+): { kept: Set<string>; explicit: Set<string> } => {
 	const keep_ids = parse_ids(keep);
 	const strip_ids = parse_ids(strip);
 	const both = keep_ids.find((id) => strip_ids.includes(id));
@@ -348,7 +348,7 @@ export const resolve = (
 		const feature = FEATURES.find((f) => f.id === id);
 		if (feature?.requires && strip_ids.includes(feature.requires)) {
 			throw CliError.usage(
-				`--keep ${id} conflicts with --strip ${feature.requires} (${id} is part of ${feature.requires})`,
+				`--keep ${id} conflicts with --strip ${feature.requires} (${id} is part of ${feature.requires})`
 			);
 		}
 	}
@@ -368,7 +368,7 @@ export const resolve = (
 		if (choice) kept.add(feature.id);
 	}
 	cascade(kept);
-	return {kept, explicit};
+	return { kept, explicit };
 };
 
 /**
@@ -398,7 +398,7 @@ export const empty_groups = (kept: Set<string>): Array<string> =>
 		(parent) =>
 			kept.has(parent.id) &&
 			members_of(parent.id).length > 0 &&
-			!members_of(parent.id).some((m) => kept.has(m.id)),
+			!members_of(parent.id).some((m) => kept.has(m.id))
 	).map((parent) => parent.id);
 
 /* git — twin of `crates/molt/src/git.rs` */
@@ -410,11 +410,11 @@ export const empty_groups = (kept: Set<string>): Array<string> =>
  * @throws `CliError` when git can't be spawned at all.
  */
 const git_output = (root: string, args: Array<string>): string | null => {
-	const result = spawnSync('git', args, {cwd: root, encoding: 'utf8'});
+	const result = spawnSync('git', args, { cwd: root, encoding: 'utf8' });
 	if (result.error) {
 		throw CliError.precondition(
 			`failed to run git: ${result.error.message}`,
-			'molt needs git on the PATH',
+			'molt needs git on the PATH'
 		);
 	}
 	return result.status === 0 ? result.stdout : null;
@@ -548,7 +548,7 @@ export const load_templates = (root: string): Templates => {
 		README_RUST_SECTION: template('readme_rust_section.md.in'),
 		CLAUDE_RUST_SECTION: template('claude_rust_section.md.in'),
 		WORKSPACE_CARGO_TOML: template('workspace_cargo.toml.in'),
-		FUNDING_YML: template('funding.yml.in'),
+		FUNDING_YML: template('funding.yml.in')
 	};
 };
 
@@ -569,11 +569,11 @@ export const render = (template: string, substitutions: Array<[string, string]>)
 	let out = '';
 	let rest = template;
 	while (rest !== '') {
-		let earliest: {idx: number; token: string; value: string} | null = null;
+		let earliest: { idx: number; token: string; value: string } | null = null;
 		for (const [token, value] of substitutions) {
 			const idx = rest.indexOf(token);
 			if (idx !== -1 && (earliest === null || idx < earliest.idx)) {
-				earliest = {idx, token, value};
+				earliest = { idx, token, value };
 			}
 		}
 		if (earliest === null) {
@@ -593,12 +593,12 @@ export const render = (template: string, substitutions: Array<[string, string]>)
  * the repo root.
  */
 export type Action =
-	| {kind: 'replace_once'; path: string; anchor: string; replacement: string; label: string}
-	| {kind: 'replace_all'; path: string; from: string; to: string; label: string}
-	| {kind: 'replace_file'; path: string; anchors: Array<string>; content: string; label: string}
-	| {kind: 'rename_dir'; from: string; to: string}
-	| {kind: 'delete_file'; path: string}
-	| {kind: 'delete_dir'; path: string};
+	| { kind: 'replace_once'; path: string; anchor: string; replacement: string; label: string }
+	| { kind: 'replace_all'; path: string; from: string; to: string; label: string }
+	| { kind: 'replace_file'; path: string; anchors: Array<string>; content: string; label: string }
+	| { kind: 'rename_dir'; from: string; to: string }
+	| { kind: 'delete_file'; path: string }
+	| { kind: 'delete_dir'; path: string };
 
 export const describe = (action: Action): string => {
 	switch (action.kind) {
@@ -620,19 +620,19 @@ const replace_once = (
 	path: string,
 	anchor: string,
 	replacement: string,
-	label: string,
+	label: string
 ): Action => ({
 	kind: 'replace_once',
 	path,
 	anchor,
 	replacement,
-	label,
+	label
 });
 
 /** Builds the full molt plan from resolved choices. Pure — reads nothing. */
 export const build_plan = (config: MoltConfig, templates: Templates): Array<Action> => {
 	const plan: Array<Action> = [];
-	const {name, npm_name} = config;
+	const { name, npm_name } = config;
 
 	// package.json identity
 	plan.push(
@@ -640,32 +640,32 @@ export const build_plan = (config: MoltConfig, templates: Templates): Array<Acti
 			'package.json',
 			PACKAGE_JSON_NAME,
 			`  "name": "${json_escape(npm_name)}",\n`,
-			`name → ${npm_name}`,
-		),
+			`name → ${npm_name}`
+		)
 	);
 	const description_replacement =
 		config.description === '' ? '' : `  "description": "${json_escape(config.description)}",\n`;
 	plan.push(
-		replace_once('package.json', PACKAGE_JSON_DESCRIPTION, description_replacement, 'description'),
+		replace_once('package.json', PACKAGE_JSON_DESCRIPTION, description_replacement, 'description')
 	);
 	for (const [anchor, label] of [
 		[PACKAGE_JSON_GLYPH, 'remove template glyph'],
 		[PACKAGE_JSON_LOGO, 'remove template logo'],
 		[PACKAGE_JSON_LOGO_ALT, 'remove template logo_alt'],
-		[PACKAGE_JSON_LICENSE, 'remove license (choose your own)'],
+		[PACKAGE_JSON_LICENSE, 'remove license (choose your own)']
 	] as Array<[string, string]>) {
 		plan.push(replace_once('package.json', anchor, '', label));
 	}
 
 	// the template's MIT license is fuz.dev's, not the new project's
-	plan.push({kind: 'delete_file', path: 'LICENSE'});
+	plan.push({ kind: 'delete_file', path: 'LICENSE' });
 
 	// the TS twin ejector (`npm run molt`) is template machinery, deleted on
 	// eject like molt's own crate — the script, its npm entry, and its check
 	// test (which verifies anchors that no longer match once molted)
 	plan.push(replace_once('package.json', PACKAGE_JSON_MOLT_SCRIPT, '', 'remove the molt script'));
-	plan.push({kind: 'delete_file', path: 'src/lib/molt.ts'});
-	plan.push({kind: 'delete_file', path: 'src/test/molt.test.ts'});
+	plan.push({ kind: 'delete_file', path: 'src/lib/molt.ts' });
+	plan.push({ kind: 'delete_file', path: 'src/test/molt.test.ts' });
 
 	const homepage_replacement =
 		config.domain === null ? '' : `  "homepage": "https://${config.domain}/",\n`;
@@ -673,7 +673,7 @@ export const build_plan = (config: MoltConfig, templates: Templates): Array<Acti
 	const repository_replacement =
 		config.repo_url === null ? '' : `  "repository": "${json_escape(config.repo_url)}",\n`;
 	plan.push(
-		replace_once('package.json', PACKAGE_JSON_REPOSITORY, repository_replacement, 'repository'),
+		replace_once('package.json', PACKAGE_JSON_REPOSITORY, repository_replacement, 'repository')
 	);
 
 	// custom domain
@@ -683,28 +683,23 @@ export const build_plan = (config: MoltConfig, templates: Templates): Array<Acti
 			path: 'static/CNAME',
 			anchors: [CNAME_CONTENT],
 			content: `${config.domain}\n`,
-			label: `custom domain → ${config.domain}`,
+			label: `custom domain → ${config.domain}`
 		});
 	} else {
-		plan.push({kind: 'delete_file', path: 'static/CNAME'});
+		plan.push({ kind: 'delete_file', path: 'static/CNAME' });
 	}
 
 	// root layout: title + template logo
 	plan.push(
-		replace_once(
-			'src/routes/+layout.svelte',
-			LAYOUT_LOGO_IMPORT,
-			'',
-			'remove template logo import',
-		),
+		replace_once('src/routes/+layout.svelte', LAYOUT_LOGO_IMPORT, '', 'remove template logo import')
 	);
 	plan.push(
 		replace_once(
 			'src/routes/+layout.svelte',
 			LAYOUT_SITE_STATE,
 			LAYOUT_SITE_STATE_REPLACEMENT,
-			'drop template icon',
-		),
+			'drop template icon'
+		)
 	);
 	// the project name, not the npm name — a scoped `@you/app` reads badly
 	// in a browser tab
@@ -713,8 +708,8 @@ export const build_plan = (config: MoltConfig, templates: Templates): Array<Acti
 			'src/routes/+layout.svelte',
 			LAYOUT_TITLE,
 			`<title>${name}</title>`,
-			`title → ${name}`,
-		),
+			`title → ${name}`
+		)
 	);
 
 	// starter page + demo components
@@ -725,41 +720,41 @@ export const build_plan = (config: MoltConfig, templates: Templates): Array<Acti
 		anchors: [PAGE_MREOWS_IMPORT, H1_FUZ_TEMPLATE],
 		content: render(templates.PAGE_SVELTE, [
 			['__NAME__', name],
-			['__DOCS_LINK__', docs_link],
+			['__DOCS_LINK__', docs_link]
 		]),
-		label: 'minimal starter page',
+		label: 'minimal starter page'
 	});
 	plan.push(
 		replace_once(
 			'src/routes/about/+page.svelte',
 			H1_FUZ_TEMPLATE,
 			`<h1 class="mt_xl2">${name}</h1>`,
-			`heading → ${name}`,
-		),
+			`heading → ${name}`
+		)
 	);
-	plan.push({kind: 'delete_file', path: 'src/lib/Mreows.svelte'});
-	plan.push({kind: 'delete_file', path: 'src/lib/Positioned.svelte'});
+	plan.push({ kind: 'delete_file', path: 'src/lib/Mreows.svelte' });
+	plan.push({ kind: 'delete_file', path: 'src/lib/Positioned.svelte' });
 
 	// docs system, and the svelte-docinfo tooling that exists only for it
 	if (!keeps(config, DOCS)) {
-		plan.push({kind: 'delete_dir', path: 'src/routes/docs'});
-		plan.push({kind: 'delete_file', path: 'src/routes/library.ts'});
+		plan.push({ kind: 'delete_dir', path: 'src/routes/docs' });
+		plan.push({ kind: 'delete_file', path: 'src/routes/library.ts' });
 		plan.push(
 			replace_once(
 				'package.json',
 				PACKAGE_JSON_SVELTE_DOCINFO,
 				'',
-				'remove the svelte-docinfo devDependency',
-			),
+				'remove the svelte-docinfo devDependency'
+			)
 		);
 		plan.push(
-			replace_once('vite.config.ts', VITE_DOCINFO_IMPORT, '', 'remove the svelte-docinfo import'),
+			replace_once('vite.config.ts', VITE_DOCINFO_IMPORT, '', 'remove the svelte-docinfo import')
 		);
 		plan.push(
-			replace_once('vite.config.ts', VITE_DOCINFO_PLUGIN, '', 'remove the svelte-docinfo plugin'),
+			replace_once('vite.config.ts', VITE_DOCINFO_PLUGIN, '', 'remove the svelte-docinfo plugin')
 		);
 		plan.push(
-			replace_once('src/app.d.ts', APP_D_TS_DOCINFO, '', 'remove the svelte-docinfo ambient types'),
+			replace_once('src/app.d.ts', APP_D_TS_DOCINFO, '', 'remove the svelte-docinfo ambient types')
 		);
 	}
 
@@ -775,9 +770,9 @@ export const build_plan = (config: MoltConfig, templates: Templates): Array<Acti
 		content: render(templates.README_MD, [
 			['__NPM_NAME__', npm_name],
 			['__DESCRIPTION_BLOCK__', description_block],
-			['__RUST_SECTION__', readme_rust],
+			['__RUST_SECTION__', readme_rust]
 		]),
-		label: 'regenerate for the new project',
+		label: 'regenerate for the new project'
 	});
 	plan.push({
 		kind: 'replace_file',
@@ -787,9 +782,9 @@ export const build_plan = (config: MoltConfig, templates: Templates): Array<Acti
 			['__NAME__', name],
 			['__DESCRIPTION_BLOCK__', description_block],
 			['__DOCS_BULLET__', claude_docs_bullet],
-			['__RUST_SECTION__', claude_rust],
+			['__RUST_SECTION__', claude_rust]
 		]),
-		label: 'regenerate for the new project (AGENTS.md symlinks here)',
+		label: 'regenerate for the new project (AGENTS.md symlinks here)'
 	});
 
 	// .github extras: personalized when kept (the template's funding handles
@@ -800,25 +795,25 @@ export const build_plan = (config: MoltConfig, templates: Templates): Array<Acti
 			path: '.github/FUNDING.yml',
 			anchors: [FUNDING_GITHUB],
 			content: templates.FUNDING_YML,
-			label: 'funding placeholders (fill in or delete)',
+			label: 'funding placeholders (fill in or delete)'
 		});
 		if (config.repo_url !== null) {
 			for (const path of [
 				'.github/ISSUE_TEMPLATE/config.yml',
-				'.github/ISSUE_TEMPLATE/preapproved.md',
+				'.github/ISSUE_TEMPLATE/preapproved.md'
 			]) {
 				plan.push({
 					kind: 'replace_all',
 					path,
 					from: TEMPLATE_REPO_URL,
 					to: config.repo_url,
-					label: `discussions url → ${config.repo_url}`,
+					label: `discussions url → ${config.repo_url}`
 				});
 			}
 		}
 	} else {
-		plan.push({kind: 'delete_file', path: '.github/FUNDING.yml'});
-		plan.push({kind: 'delete_dir', path: '.github/ISSUE_TEMPLATE'});
+		plan.push({ kind: 'delete_file', path: '.github/FUNDING.yml' });
+		plan.push({ kind: 'delete_dir', path: '.github/ISSUE_TEMPLATE' });
 	}
 
 	// the Rust workspace, and molt's own crate; `cli` is always kept here —
@@ -832,31 +827,31 @@ export const build_plan = (config: MoltConfig, templates: Templates): Array<Acti
 			anchors: [WORKSPACE_MEMBERS],
 			content: render(templates.WORKSPACE_CARGO_TOML, [
 				['__MEMBERS__', members],
-				['__LICENSE__', ''],
+				['__LICENSE__', '']
 			]),
-			label: "workspace without molt's crate or the template's license",
+			label: "workspace without molt's crate or the template's license"
 		});
 		plan.push(
 			replace_once(
 				'crates/app_cli/Cargo.toml',
 				APP_CLI_LICENSE,
 				'',
-				'remove the license inheritance (the workspace line is gone)',
-			),
+				'remove the license inheritance (the workspace line is gone)'
+			)
 		);
 		// rename the token before inserting the user's description, which may
 		// itself contain "app_cli" and must survive verbatim
 		for (const path of [
 			'crates/app_cli/Cargo.toml',
 			'crates/app_cli/src/main.rs',
-			'crates/app_cli/src/error.rs',
+			'crates/app_cli/src/error.rs'
 		]) {
 			plan.push({
 				kind: 'replace_all',
 				path,
 				from: APP_CLI_TOKEN,
 				to: name,
-				label: `${APP_CLI_TOKEN} → ${name}`,
+				label: `${APP_CLI_TOKEN} → ${name}`
 			});
 		}
 		const crate_description_replacement =
@@ -866,28 +861,28 @@ export const build_plan = (config: MoltConfig, templates: Templates): Array<Acti
 				'crates/app_cli/Cargo.toml',
 				APP_CLI_DESCRIPTION,
 				crate_description_replacement,
-				'description',
-			),
+				'description'
+			)
 		);
-		plan.push({kind: 'rename_dir', from: 'crates/app_cli', to: `crates/${name}`});
-		plan.push({kind: 'delete_dir', path: 'crates/molt'});
+		plan.push({ kind: 'rename_dir', from: 'crates/app_cli', to: `crates/${name}` });
+		plan.push({ kind: 'delete_dir', path: 'crates/molt' });
 	} else {
 		plan.push(replace_once('.github/workflows/check.yml', CI_RUST_JOB, '', 'remove the rust job'));
 		for (const path of ['Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'clippy.toml']) {
-			plan.push({kind: 'delete_file', path});
+			plan.push({ kind: 'delete_file', path });
 		}
-		plan.push({kind: 'delete_dir', path: 'crates'});
+		plan.push({ kind: 'delete_dir', path: 'crates' });
 	}
-	plan.push({kind: 'delete_dir', path: '.cargo'});
+	plan.push({ kind: 'delete_dir', path: '.cargo' });
 
 	// deletes run after every edit and rename, so a mid-apply failure on the
 	// `--force` dirty path (the one with no clean undo point) strands as
 	// little as possible
 	const deletes: Array<Action> = plan.filter(
-		(a) => a.kind === 'delete_file' || a.kind === 'delete_dir',
+		(a) => a.kind === 'delete_file' || a.kind === 'delete_dir'
 	);
 	const ordered: Array<Action> = plan.filter(
-		(a) => a.kind !== 'delete_file' && a.kind !== 'delete_dir',
+		(a) => a.kind !== 'delete_file' && a.kind !== 'delete_dir'
 	);
 	ordered.push(...deletes);
 	return ordered;
@@ -909,7 +904,7 @@ export const verify = (root: string, plan: Array<Action>): Array<string> => {
 					const count = content.split(action.anchor).length - 1;
 					if (count !== 1) {
 						issues.push(
-							`${action.path}: anchor matched ${count} times (expected exactly 1): ${JSON.stringify(action.anchor)}`,
+							`${action.path}: anchor matched ${count} times (expected exactly 1): ${JSON.stringify(action.anchor)}`
 						);
 					}
 				}
@@ -921,7 +916,7 @@ export const verify = (root: string, plan: Array<Action>): Array<string> => {
 					issues.push(`${action.path}: file missing`);
 				} else if (!content.includes(action.from)) {
 					issues.push(
-						`${action.path}: expected occurrences of ${JSON.stringify(action.from)}, found none`,
+						`${action.path}: expected occurrences of ${JSON.stringify(action.from)}, found none`
 					);
 				}
 				break;
@@ -1027,7 +1022,7 @@ export const apply = (root: string, plan: Array<Action>): void => {
 				break;
 			}
 			case 'delete_dir': {
-				rmSync(join(root, action.path), {recursive: true});
+				rmSync(join(root, action.path), { recursive: true });
 				break;
 			}
 		}
@@ -1054,11 +1049,11 @@ export const check_all = (root: string): Array<string> => {
 	const live = readFileSync(join(root, 'Cargo.toml'), 'utf8');
 	const rendered = render(templates.WORKSPACE_CARGO_TOML, [
 		['members = [__MEMBERS__]', WORKSPACE_MEMBERS],
-		['__LICENSE__', WORKSPACE_LICENSE],
+		['__LICENSE__', WORKSPACE_LICENSE]
 	]);
 	if (live !== rendered) {
 		issues.push(
-			'Cargo.toml: drifted from crates/molt/templates/workspace_cargo.toml.in (only the members and license lines may differ)',
+			'Cargo.toml: drifted from crates/molt/templates/workspace_cargo.toml.in (only the members and license lines may differ)'
 		);
 	}
 	issues.sort();
@@ -1079,7 +1074,7 @@ export const sample_configs = (): [MoltConfig, MoltConfig] => [
 		description: 'a sample app that replaces app_cli',
 		domain: 'sample.example.com',
 		repo_url: 'https://github.com/sample/sample_app',
-		kept: new Set(FEATURES.map((f) => f.id)),
+		kept: new Set(FEATURES.map((f) => f.id))
 	},
 	{
 		name: 'plain_app',
@@ -1087,8 +1082,8 @@ export const sample_configs = (): [MoltConfig, MoltConfig] => [
 		description: '',
 		domain: null,
 		repo_url: null,
-		kept: new Set(),
-	},
+		kept: new Set()
+	}
 ];
 
 /** Runs `molt check`: verifies every anchor and template invariant. */
@@ -1099,13 +1094,13 @@ const check_run = (root: string): number => {
 		return 0;
 	}
 	console.error(
-		"molt check failed — the template drifted from molt's anchors or embedded templates:",
+		"molt check failed — the template drifted from molt's anchors or embedded templates:"
 	);
 	for (const issue of issues) {
 		console.error(`  ${issue}`);
 	}
 	console.error(
-		'(update the anchors in src/lib/molt.ts — and the Rust twin in crates/molt — in the same change)',
+		'(update the anchors in src/lib/molt.ts — and the Rust twin in crates/molt — in the same change)'
 	);
 	// drift is caller-must-fix, same dialect as CliError kind 'drift'
 	return 2;
@@ -1119,7 +1114,7 @@ const interactive = (): boolean => process.stdin.isTTY && process.stdout.isTTY;
 let rl: readline.Interface | null = null;
 
 const get_rl = (): readline.Interface => {
-	rl ??= readline.createInterface({input: process.stdin, output: process.stdout});
+	rl ??= readline.createInterface({ input: process.stdin, output: process.stdout });
 	return rl;
 };
 
@@ -1136,7 +1131,7 @@ const question = (query: string): Promise<string | null> =>
 			() => {
 				settled = true;
 				question_resolve(null);
-			},
+			}
 		);
 		iface.once('close', () => {
 			if (!settled) question_resolve(null);
@@ -1146,15 +1141,15 @@ const question = (query: string): Promise<string | null> =>
 /** Prompts for a line; returns the resolved value and whether stdin hit EOF. */
 const prompt_raw = async (
 	label: string,
-	default_value: string | null,
-): Promise<{value: string; eof: boolean}> => {
+	default_value: string | null
+): Promise<{ value: string; eof: boolean }> => {
 	const suffix = default_value ? ` [${default_value}]` : '';
 	const line = await question(`${label}${suffix}: `);
 	if (line === null) {
-		return {value: default_value ?? '', eof: true};
+		return { value: default_value ?? '', eof: true };
 	}
 	const trimmed = line.trim();
-	return {value: trimmed === '' ? (default_value ?? '') : trimmed, eof: false};
+	return { value: trimmed === '' ? (default_value ?? '') : trimmed, eof: false };
 };
 
 /** Prompts for a line of input; empty input (or EOF) selects `default_value`. */
@@ -1168,10 +1163,10 @@ const prompt = async (label: string, default_value: string | null): Promise<stri
 const prompt_validated = async (
 	label: string,
 	default_value: string | null,
-	validate: (value: string) => void,
+	validate: (value: string) => void
 ): Promise<string> => {
 	for (;;) {
-		const {value, eof} = await prompt_raw(label, default_value);
+		const { value, eof } = await prompt_raw(label, default_value);
 		try {
 			validate(value);
 			return value;
@@ -1252,23 +1247,23 @@ const parse_top_level = (args: Array<string>): TopLevel | null => {
 		parsed = parseArgs({
 			args,
 			options: {
-				name: {type: 'string'},
-				'npm-name': {type: 'string'},
-				description: {type: 'string'},
-				domain: {type: 'string'},
-				repo: {type: 'string'},
-				keep: {type: 'string', multiple: true},
-				strip: {type: 'string', multiple: true},
-				wetrun: {type: 'boolean'},
-				force: {type: 'boolean'},
-				help: {type: 'boolean'},
+				name: { type: 'string' },
+				'npm-name': { type: 'string' },
+				description: { type: 'string' },
+				domain: { type: 'string' },
+				repo: { type: 'string' },
+				keep: { type: 'string', multiple: true },
+				strip: { type: 'string', multiple: true },
+				wetrun: { type: 'boolean' },
+				force: { type: 'boolean' },
+				help: { type: 'boolean' }
 			},
-			allowPositionals: true,
+			allowPositionals: true
 		});
 	} catch (err) {
 		throw CliError.usage(err instanceof Error ? err.message : String(err));
 	}
-	const {values, positionals} = parsed;
+	const { values, positionals } = parsed;
 	if (values.help) {
 		console.log(HELP);
 		return null;
@@ -1290,7 +1285,7 @@ const parse_top_level = (args: Array<string>): TopLevel | null => {
 		strip: values.strip ?? [],
 		wetrun: values.wetrun ?? false,
 		force: values.force ?? false,
-		subcommand,
+		subcommand
 	};
 };
 
@@ -1323,7 +1318,7 @@ const locate_root = (): string => {
 		if (parent === dir) {
 			throw CliError.precondition(
 				'not inside the fuz_template repo (no package.json + crates/molt found)',
-				'run `npm run molt` from your clone of fuz_template',
+				'run `npm run molt` from your clone of fuz_template'
 			);
 		}
 		dir = parent;
@@ -1357,7 +1352,7 @@ const molt = async (top: TopLevel, root: string): Promise<number> => {
 	if (!existsSync(join(root, '.git'))) {
 		throw CliError.precondition(
 			'not a git repository — molt refuses to run without an undo path',
-			"git init && git add -A && git commit -m 'init from fuz_template'",
+			"git init && git add -A && git commit -m 'init from fuz_template'"
 		);
 	}
 	// a failed `git status` is its own problem, not a dirty tree
@@ -1365,14 +1360,14 @@ const molt = async (top: TopLevel, root: string): Promise<number> => {
 	if (status === null) {
 		throw CliError.precondition(
 			'`git status` failed in this repo',
-			'make sure `git status --porcelain` succeeds here, then rerun molt',
+			'make sure `git status --porcelain` succeeds here, then rerun molt'
 		);
 	}
 	const clean = status.trim() === '';
 	if (!clean && !top.force) {
 		throw CliError.precondition(
 			'the git tree is dirty — molt wants a clean tree so it stays undoable',
-			'commit or stash your changes, or pass --force to proceed anyway',
+			'commit or stash your changes, or pass --force to proceed anyway'
 		);
 	}
 	const gate = apply_gate(top.wetrun, clean, is_interactive);
@@ -1380,7 +1375,7 @@ const molt = async (top: TopLevel, root: string): Promise<number> => {
 		// refuse before prompting/planning — this is an invocation problem
 		throw CliError.precondition(
 			'refusing to apply to a dirty git tree without a terminal — there would be no clean undo point',
-			'commit or stash first, or run interactively to confirm the dirty apply',
+			'commit or stash first, or run interactively to confirm the dirty apply'
 		);
 	}
 
@@ -1407,7 +1402,7 @@ const molt = async (top: TopLevel, root: string): Promise<number> => {
 			console.log();
 			apply_now = await prompt_bool(
 				'the git tree is DIRTY — apply anyway, with no clean undo point?',
-				false,
+				false
 			);
 			break;
 		}
@@ -1415,7 +1410,7 @@ const molt = async (top: TopLevel, root: string): Promise<number> => {
 			console.log();
 			apply_now = await prompt_bool(
 				'apply this plan? the template becomes your project and molt deletes itself',
-				false,
+				false
 			);
 			break;
 		}
@@ -1444,7 +1439,7 @@ const molt = async (top: TopLevel, root: string): Promise<number> => {
 const resolve_config = async (
 	top: TopLevel,
 	root: string,
-	is_interactive: boolean,
+	is_interactive: boolean
 ): Promise<MoltConfig> => {
 	let name;
 	if (top.name !== null) {
@@ -1488,8 +1483,8 @@ const resolve_config = async (
 				(value) => {
 					const trimmed = value.trim();
 					if (trimmed !== '') validate_domain(trimmed);
-				},
-			),
+				}
+			)
 		);
 	} else {
 		domain = null;
@@ -1506,7 +1501,7 @@ const resolve_config = async (
 		repo_url = derived_repo;
 	}
 
-	const {kept, explicit} = resolve(top.keep, top.strip);
+	const { kept, explicit } = resolve(top.keep, top.strip);
 	if (is_interactive) {
 		// registry order puts parents before dependents, so `requires` and
 		// `member_of` parents are already decided when a dependent comes up
@@ -1519,7 +1514,7 @@ const resolve_config = async (
 			// a prompt whose answer explicit flags already force is skipped
 			// with a note instead of contradicting the flag after the fact
 			const child = FEATURES.find(
-				(f) => f.requires === feature.id && explicit.has(f.id) && kept.has(f.id),
+				(f) => f.requires === feature.id && explicit.has(f.id) && kept.has(f.id)
 			);
 			if (child) {
 				console.log(`note: keeping ${feature.id} — --keep ${child.id} needs it`);
@@ -1532,7 +1527,7 @@ const resolve_config = async (
 			if (members.length > 0 && members.every((m) => explicit.has(m.id) && !kept.has(m.id))) {
 				const member_ids = members.map((m) => m.id).join(', ');
 				console.log(
-					`note: --strip ${member_ids} leaves ${feature.id} without a required member — stripping it too`,
+					`note: --strip ${member_ids} leaves ${feature.id} without a required member — stripping it too`
 				);
 				kept.delete(feature.id);
 				continue;
@@ -1575,11 +1570,11 @@ const resolve_config = async (
 			.map((m) => m.id)
 			.join(', ');
 		throw CliError.usage(
-			`keeping ${empty_parent} requires at least one of its member features (${members}) — keep one, or strip ${empty_parent} too`,
+			`keeping ${empty_parent} requires at least one of its member features (${members}) — keep one, or strip ${empty_parent} too`
 		);
 	}
 
-	return {name, npm_name, description, domain, repo_url, kept};
+	return { name, npm_name, description, domain, repo_url, kept };
 };
 
 const non_empty = (value: string): string | null => {
@@ -1600,17 +1595,17 @@ const print_next_steps = (config: MoltConfig, clean: boolean): void => {
 		console.log('\nto undo the molt: git reset --hard && git clean -fd');
 	}
 	console.log(
-		"\nstatic/logo.svg and static/favicon.png still carry the template's spider — replace them when ready.",
+		"\nstatic/logo.svg and static/favicon.png still carry the template's spider — replace them when ready."
 	);
 	console.log(
-		"molt deleted the template's MIT LICENSE and license fields — choose your own: https://choosealicense.com/",
+		"molt deleted the template's MIT LICENSE and license fields — choose your own: https://choosealicense.com/"
 	);
 	if (keeps(config, GITHUB_EXTRAS)) {
 		if (config.repo_url !== null) {
 			console.log('.github/FUNDING.yml now holds placeholder funding links — fill in or delete.');
 		} else {
 			console.log(
-				'.github/FUNDING.yml now holds placeholder funding links, and the issue-template discussion links still point at the template (no repo url to derive) — update or delete them.',
+				'.github/FUNDING.yml now holds placeholder funding links, and the issue-template discussion links still point at the template (no repo url to derive) — update or delete them.'
 			);
 		}
 	}

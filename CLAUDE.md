@@ -140,12 +140,12 @@ Key behaviors:
   prompt whose answer explicit flags already force (`--keep cli` forces the
   workspace, `--strip cli` forces stripping rust) is skipped with a note.
   `.cargo/` (which holds only the `cargo molt` alias) and the MIT `LICENSE`
-  + `license` fields are deleted unconditionally — the license is fuz.dev's,
-  not the new project's, so keeping it is never right (same reasoning as the
-  personalized github-extras). The registry lives in
-  `crates/molt/src/features.rs` and its TS twin in `molt.ts` — new features
-  are one entry + a plan fragment in each twin (the check sample configs
-  derive from the registry).
+  - `license` fields are deleted unconditionally — the license is fuz.dev's,
+    not the new project's, so keeping it is never right (same reasoning as the
+    personalized github-extras). The registry lives in
+    `crates/molt/src/features.rs` and its TS twin in `molt.ts` — new features
+    are one entry + a plan fragment in each twin (the check sample configs
+    derive from the registry).
 - **Identity fields**: name (required), npm name, description, domain,
   repo url — derived from the git origin when it isn't the template's.
 - **Self-verifying**: `cargo molt check` / `npm run molt -- check` and both
