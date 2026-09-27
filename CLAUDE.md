@@ -9,11 +9,6 @@ pre-configured.
 
 For coding conventions, see Skill(fuz-stack).
 
-## Committing
-
-`git add` and `git commit` are denied by `.claude/settings.local.json` in
-this repo — make the edits and stop, the user commits.
-
 ## Gro commands
 
 ```bash
