@@ -299,7 +299,7 @@ Deploy with `gro deploy` (builds and pushes to deploy branch).
 
 - TypeScript strict mode
 - Svelte 5 with runes API
-- Prettier with tabs, 100 char width
+- tsv (`gro format`) with tabs, 100 char width
 - Node >= 24.14
 - Rust pinned via `rust-toolchain.toml` (edition 2024)
 - Private package (not published to npm)

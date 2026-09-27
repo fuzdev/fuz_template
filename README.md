@@ -21,7 +21,7 @@
     with [Svelte](https://github.com/sveltejs/svelte) and
     [svelte-check](https://github.com/sveltejs/language-tools/tree/master/packages/svelte-check)
   - testing with [Vitest](https://github.com/vitest-dev/vitest)
-  - formatting with [Prettier](https://github.com/prettier/prettier)
+  - formatting with [tsv](https://github.com/fuzdev/tsv)
   - linting with [ESLint](https://github.com/eslint/eslint)
     and [`@ryanatkn/eslint-config`](https://github.com/ryanatkn/eslint-config)
   - also has [a task system](https://github.com/fuzdev/gro/blob/main/src/docs/task.md)
@@ -190,7 +190,7 @@ gro deploy
 [Vitest](https://github.com/vitest-dev/vitest) ∙
 [TypeScript](https://github.com/microsoft/TypeScript) ∙
 [ESLint](https://github.com/eslint/eslint) ∙
-[Prettier](https://github.com/prettier/prettier) ∙
+[tsv](https://github.com/fuzdev/tsv) ∙
 [fuz_css](https://github.com/fuzdev/fuz_css) ∙
 [Fuz](https://github.com/fuzdev/fuz_ui) ∙
 [Gro](https://github.com/fuzdev/gro) ∙

@@ -32,5 +32,5 @@ __DOCS_BULLET__- fuz_css utility classes are generated on demand by the
 
 - TypeScript strict mode
 - Svelte 5 with runes API
-- Prettier with tabs, 100 char width
+- tsv (`gro format`) with tabs, 100 char width
 __RUST_SECTION__
