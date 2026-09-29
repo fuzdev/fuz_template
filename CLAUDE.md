@@ -20,9 +20,6 @@ gro deploy    # build, commit, and push to deploy branch
 gro sync      # regenerate files and run svelte-kit sync
 ```
 
-IMPORTANT for AI agents: Do NOT run `gro dev` - the developer will manage the
-dev server.
-
 ## Key dependencies
 
 - Svelte 5 - component framework with runes
