@@ -23,6 +23,9 @@ use crate::cli::TopLevel;
 use crate::config::MoltConfig;
 use crate::error::CliError;
 
+/// The non-interactive refusal to keep docs without a repository url.
+const DOCS_NEEDS_REPO: &str = "keeping docs needs a repository url (the API docs link to source) \u{2014} pass --repo <url>, or --strip docs";
+
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     let bin = args.first().map_or("molt", String::as_str);
@@ -157,10 +160,7 @@ fn molt(top: &TopLevel, root: &Path) -> Result<ExitCode, CliError> {
 
     let config = resolve_config(top, root, interactive)?;
     let plan = plan::build_plan(&config);
-    let issues = plan::verify(root, &plan)?;
-    if !issues.is_empty() {
-        return Err(CliError::Drift(issues.join("\n")));
-    }
+    ensure_applicable(root, &plan)?;
 
     println!("\nmolt plan ({} actions):", plan.len());
     for action in &plan {
@@ -200,14 +200,30 @@ fn molt(top: &TopLevel, root: &Path) -> Result<ExitCode, CliError> {
     if matches!(gate, ApplyGate::Confirm | ApplyGate::ConfirmDirty) {
         // the tree may have changed while the prompt waited — apply would
         // silently skip an edit whose anchor disappeared, so verify again
-        let issues = plan::verify(root, &plan)?;
-        if !issues.is_empty() {
-            return Err(CliError::Drift(issues.join("\n")));
-        }
+        ensure_applicable(root, &plan)?;
     }
     apply::apply(root, &plan)?;
     print_next_steps(&config, clean);
     Ok(ExitCode::SUCCESS)
+}
+
+/// Refuses a plan whose create targets are in the way or whose anchors drifted.
+fn ensure_applicable(root: &Path, plan: &[plan::Action]) -> Result<(), CliError> {
+    let conflicts = plan::conflicts(root, plan);
+    if !conflicts.is_empty() {
+        return Err(CliError::precondition(
+            format!(
+                "these files are in the way of files molt creates:\n{}",
+                conflicts.join("\n")
+            ),
+            Some("remove or rename the listed files, then rerun molt"),
+        ));
+    }
+    let issues = plan::verify(root, plan)?;
+    if !issues.is_empty() {
+        return Err(CliError::Drift(issues.join("\n")));
+    }
+    Ok(())
 }
 
 fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<MoltConfig, CliError> {
@@ -272,12 +288,13 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
 
     let derived_repo = git::output(root, &["remote", "get-url", "origin"])?
         .and_then(|url| git::normalize_remote_url(&url));
-    let repo_url = match &top.repo {
-        Some(repo) => non_empty(repo),
-        None if interactive => non_empty(&wizard::prompt(
-            "repository url (optional)",
+    let mut repo_url = match &top.repo {
+        Some(repo) => config::parse_optional_repo_url(repo)?,
+        None if interactive => prompt_repo_url(
+            "repository url (optional, but needed to keep docs)",
             derived_repo.as_deref(),
-        )?),
+            false,
+        )?,
         None => derived_repo,
     };
 
@@ -367,6 +384,34 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
         )));
     }
 
+    // the API docs link each module to its source, and fuz_ui's `Library`
+    // refuses a package without a repository — a placeholder would ship
+    // broken links, so kept docs need a real repo url
+    if kept.contains(features::DOCS) && repo_url.is_none() {
+        if !interactive {
+            return Err(CliError::Usage(DOCS_NEEDS_REPO.to_owned()));
+        }
+        if explicit.contains(features::DOCS) {
+            repo_url = prompt_repo_url(
+                "repository url (required by --keep docs \u{2014} the API docs link to source)",
+                None,
+                true,
+            )?;
+        } else if let Some(url) = prompt_repo_url(
+            "repository url (the API docs link to source; empty strips docs)",
+            None,
+            false,
+        )? {
+            repo_url = Some(url);
+        } else {
+            println!(
+                "note: no repository url \u{2014} stripping docs (the API docs link to source)"
+            );
+            kept.remove(features::DOCS);
+            features::cascade(&mut kept);
+        }
+    }
+
     Ok(MoltConfig {
         name,
         npm_name,
@@ -375,6 +420,27 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
         repo_url,
         kept,
     })
+}
+
+/// Prompts for a repository url, re-asking until the answer parses (and,
+/// when `required`, until there is one); an empty answer yields `None`.
+fn prompt_repo_url(
+    label: &str,
+    default: Option<&str>,
+    required: bool,
+) -> Result<Option<String>, CliError> {
+    let answer = wizard::prompt_validated(label, default, |value| {
+        if !git::trim_url(value).is_empty() {
+            config::parse_repo_url(value).map(|_| ())
+        } else if required {
+            Err(CliError::Usage(
+                "a repository url is required to keep docs".to_owned(),
+            ))
+        } else {
+            Ok(())
+        }
+    })?;
+    config::parse_optional_repo_url(&answer)
 }
 
 fn non_empty(value: &str) -> Option<String> {
@@ -426,6 +492,75 @@ fn print_next_steps(config: &MoltConfig, clean: bool) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn top(args: &[&str]) -> TopLevel {
+        TopLevel::from_args(&["molt"], args).unwrap()
+    }
+
+    #[test]
+    fn keeping_docs_needs_a_repo_url_when_non_interactive() {
+        // its own origin-less repo, so no repo url derives from any enclosing
+        // checkout (`git::output` also clears an inherited `GIT_DIR`)
+        let dir = env::temp_dir().join(format!(
+            "fuz_template_molt_test_docs_repo_{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        assert!(git::output(&dir, &["init", "-q"]).unwrap().is_some());
+        for args in [
+            &["--name", "demo_app"][..],
+            &["--name", "demo_app", "--keep", "docs"],
+            &["--name", "demo_app", "--repo", " "],
+        ] {
+            let err = resolve_config(&top(args), &dir, false).unwrap_err();
+            assert_eq!(err.to_string(), DOCS_NEEDS_REPO, "{args:?}");
+            assert_eq!(err.exit_code(), 2);
+        }
+        let config = resolve_config(
+            &top(&[
+                "--name",
+                "demo_app",
+                "--repo",
+                "https://github.com/me/demo_app",
+            ]),
+            &dir,
+            false,
+        )
+        .unwrap();
+        assert!(config.keeps(features::DOCS));
+        // an ssh remote pasted as --repo still yields https source links
+        let config = resolve_config(
+            &top(&[
+                "--name",
+                "demo_app",
+                "--repo",
+                "git@github.com:me/demo_app.git",
+            ]),
+            &dir,
+            false,
+        )
+        .unwrap();
+        assert_eq!(
+            config.repo_url.as_deref(),
+            Some("https://github.com/me/demo_app")
+        );
+        let err = resolve_config(
+            &top(&["--name", "demo_app", "--repo", "me/demo_app"]),
+            &dir,
+            false,
+        )
+        .unwrap_err();
+        assert_eq!(err.exit_code(), 2);
+        let config = resolve_config(
+            &top(&["--name", "demo_app", "--strip", "docs"]),
+            &dir,
+            false,
+        )
+        .unwrap();
+        assert!(!config.keeps(features::DOCS));
+        assert!(config.repo_url.is_none());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
 
     #[test]
     fn apply_gate_only_headless_clean_wetrun_applies_ungated() {

@@ -7,6 +7,7 @@ pub const README_RUST_SECTION: &str = include_str!("../templates/readme_rust_sec
 pub const CLAUDE_RUST_SECTION: &str = include_str!("../templates/claude_rust_section.md.in");
 pub const WORKSPACE_CARGO_TOML: &str = include_str!("../templates/workspace_cargo.toml.in");
 pub const FUNDING_YML: &str = include_str!("../templates/funding.yml.in");
+pub const EXAMPLE_TS: &str = include_str!("../templates/example.ts.in");
 
 /// The starter page's docs link, substituted only when docs are kept.
 pub const PAGE_DOCS_LINK: &str = " \u{b7} <a href={resolve('/docs')}>docs</a>";
@@ -80,6 +81,7 @@ mod tests {
             CLAUDE_RUST_SECTION,
             WORKSPACE_CARGO_TOML,
             FUNDING_YML,
+            EXAMPLE_TS,
         ] {
             let mut stripped = template.to_owned();
             for token in known {

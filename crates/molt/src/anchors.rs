@@ -20,16 +20,21 @@ pub const PACKAGE_JSON_REPOSITORY: &str =
 pub const PACKAGE_JSON_MOLT_SCRIPT: &str = "    \"molt\": \"node src/lib/molt.ts\",\n";
 
 pub const LAYOUT_LOGO_IMPORT: &str =
-    "\timport {logo_fuz_template} from '@fuzdev/fuz_ui/logos.ts';\n";
-pub const LAYOUT_SITE_STATE: &str = "\t// `glyph` and `repo_url` derive from `pkg_json`; `icon` stays explicit (structured `SvgData`).\n\tsite_context.set(new SiteState({icon: logo_fuz_template, pkg_json}));";
-pub const LAYOUT_SITE_STATE_REPLACEMENT: &str = "\t// `glyph` and `repo_url` derive from `pkg_json`.\n\tsite_context.set(new SiteState({pkg_json}));";
+    "\timport { logo_fuz_template } from '@fuzdev/fuz_ui/logos.ts';\n";
+pub const LAYOUT_SITE_STATE: &str = "\t// `glyph` and `repo_url` derive from `pkg_json`; `icon` stays explicit (structured `SvgData`).\n\tsite_context.set(new SiteState({ icon: logo_fuz_template, pkg_json }));";
+pub const LAYOUT_SITE_STATE_REPLACEMENT: &str = "\t// `glyph` and `repo_url` derive from `pkg_json`.\n\tsite_context.set(new SiteState({ pkg_json }));";
 pub const LAYOUT_TITLE: &str = "<title>@fuzdev/fuz_template</title>";
 
-pub const PAGE_MREOWS_IMPORT: &str = "import Mreows, {mreow_items} from '$lib/Mreows.svelte';";
+pub const PAGE_MREOWS_IMPORT: &str = "import Mreows, { mreow_items } from '$lib/Mreows.svelte';";
 pub const H1_FUZ_TEMPLATE: &str = "<h1 class=\"mt_xl2\">fuz_template</h1>";
 
 // the docs system's tooling, stripped with the `docs` feature
-pub const PACKAGE_JSON_SVELTE_DOCINFO: &str = "    \"svelte-docinfo\": \"^0.5.3\",\n";
+/// A line prefix, not a whole line — the version churns with every upgrade,
+/// so the plan removes the one line starting with it.
+pub const PACKAGE_JSON_SVELTE_DOCINFO: &str = "    \"svelte-docinfo\": \"";
+/// The svelte-docinfo line's required ending — its trailing comma proves it
+/// isn't the last entry, whose removal would strand the previous line's comma.
+pub const PACKAGE_JSON_SVELTE_DOCINFO_SUFFIX: &str = "\",\n";
 pub const VITE_DOCINFO_IMPORT: &str = "import svelte_docinfo from 'svelte-docinfo/vite.js';\n";
 pub const VITE_DOCINFO_PLUGIN: &str = "svelte_docinfo(), ";
 pub const APP_D_TS_DOCINFO: &str = "// Registers ambient types for the `virtual:svelte-docinfo` module (Vite plugin).\n// eslint-disable-next-line @typescript-eslint/triple-slash-reference\n/// <reference types=\"svelte-docinfo/virtual-svelte-docinfo.js\" />\n";
@@ -39,6 +44,12 @@ pub const FUNDING_GITHUB: &str = "github: ryanatkn";
 /// The template's repo url as it appears in the issue-template discussion
 /// links — replaced with the molted project's repo url when derivable.
 pub const TEMPLATE_REPO_URL: &str = "https://github.com/fuzdev/fuz_template";
+
+/// molt's note in the `.gitattributes` header, rewritten on eject so the
+/// molted project's LF rule doesn't cite anchors that no longer exist.
+pub const GITATTRIBUTES_MOLT_NOTE: &str = "# Force LF on checkout everywhere: molt's exact-content anchors embed `\\n`,\n# so a CRLF working tree (e.g. Windows autocrlf) would fail every anchor.\n";
+pub const GITATTRIBUTES_MOLT_NOTE_REPLACEMENT: &str =
+    "# Force LF on checkout everywhere, even under Windows autocrlf.\n";
 
 pub const README_H1: &str = "# @fuzdev/fuz_template \u{2744}";
 pub const CLAUDE_H1: &str = "# fuz_template\n";
@@ -56,6 +67,10 @@ pub const APP_CLI_DESCRIPTION: &str = "description = \"a CLI scaffolded by fuz_t
 /// The starter CLI crate's license inheritance line, stripped on eject
 /// (the workspace's license line goes with it).
 pub const APP_CLI_LICENSE: &str = "license.workspace = true\n";
+
+/// The comment inside `CI_RUST_JOB` pointing at this file — removed on eject
+/// when the job is kept, since molt's crate is gone.
+pub const CI_RUST_JOB_MOLT_COMMENT: &str = "    # molt anchors this job (crates/molt/src/anchors.rs) so stripping\n    # the rust feature can remove it \u{2014} update the anchor when editing.\n";
 
 /// The `rust` job appended to `.github/workflows/check.yml` — kept here as an
 /// exact-match anchor so stripping the `rust` feature can remove it.

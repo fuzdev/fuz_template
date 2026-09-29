@@ -2,6 +2,7 @@ use std::collections::BTreeSet;
 use std::fmt::Write as _;
 
 use crate::error::CliError;
+use crate::git;
 
 /// Fully-resolved molt choices, assembled from flags and wizard answers.
 /// `kept` holds the feature ids (from `features::FEATURES`) to keep.
@@ -120,6 +121,28 @@ pub fn validate_domain(domain: &str) -> Result<(), CliError> {
     }
 }
 
+/// Parses a repository url given as a flag or wizard answer into its web url
+/// via `git::to_repo_url`, so an ssh remote pasted as-is still yields
+/// working source links in the API docs.
+pub fn parse_repo_url(value: &str) -> Result<String, CliError> {
+    git::to_repo_url(value).ok_or_else(|| {
+        // quoted with `json_escape`, not `{:?}`, so both twins print it alike
+        CliError::Usage(format!(
+            "invalid repository url \"{}\": expected an https, http, or ssh git url like https://github.com/you/app",
+            json_escape(git::trim_url(value))
+        ))
+    })
+}
+
+/// Like `parse_repo_url`, but blank input (after `git::trim_url`) is no url.
+pub fn parse_optional_repo_url(value: &str) -> Result<Option<String>, CliError> {
+    if git::trim_url(value).is_empty() {
+        Ok(None)
+    } else {
+        parse_repo_url(value).map(Some)
+    }
+}
+
 /// Escapes a string for embedding in a JSON string literal (also valid for
 /// TOML basic strings, which share the `\"`/`\\`/`\n` escapes).
 pub fn json_escape(value: &str) -> String {
@@ -160,6 +183,27 @@ mod tests {
         assert!(validate_name("test").is_err());
         assert!(validate_name("gen").is_err());
         assert!(validate_name("matcher").is_ok());
+    }
+
+    #[test]
+    fn repo_url_parsing() {
+        assert_eq!(
+            parse_repo_url(" git@github.com:me/demo_app.git ").unwrap(),
+            "https://github.com/me/demo_app"
+        );
+        let err = parse_repo_url("me/demo_app").unwrap_err();
+        assert_eq!(err.exit_code(), 2);
+        assert!(
+            err.to_string()
+                .starts_with("invalid repository url \"me/demo_app\"")
+        );
+        // control characters quote the same in both twins
+        let err = parse_repo_url("me\u{1}app").unwrap_err();
+        assert!(
+            err.to_string()
+                .starts_with("invalid repository url \"me\\u0001app\"")
+        );
+        assert_eq!(parse_optional_repo_url(" \u{feff}").unwrap(), None);
     }
 
     #[test]

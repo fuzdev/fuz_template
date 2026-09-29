@@ -23,7 +23,8 @@ pub struct TopLevel {
     #[argh(option)]
     pub domain: Option<String>,
 
-    /// repository url (defaults to the git origin remote when it isn't the template's)
+    /// repository url (defaults to the git origin remote when it isn't the
+    /// template's; required to keep docs, whose API pages link to source)
     #[argh(option)]
     pub repo: Option<String>,
 

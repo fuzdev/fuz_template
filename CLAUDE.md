@@ -72,7 +72,10 @@ npm run molt # or `cargo molt`
 - `src/routes/+layout.svelte` - `<title>`, template logo
 - `src/routes/+page.svelte` - replace demo content
 - `src/routes/about/+page.svelte` - heading
-- `src/lib/Mreows.svelte` and `src/lib/Positioned.svelte` - deleted (demo components)
+- `src/lib/Mreows.svelte` and `src/lib/Positioned.svelte` - deleted (demo
+  components); with docs kept, a starter `src/lib/example.ts` replaces them
+  (the API docs prerender a page per module, so they need at least one)
+- `.gitattributes` and `.github/workflows/check.yml` - molt's notes removed
 - `LICENSE` and the `license` fields - deleted (the MIT license is the
   template's; your project chooses its own)
 - `static/CNAME` - update or delete for your domain
@@ -142,7 +145,17 @@ Key behaviors:
     are one entry + a plan fragment in each twin (the check sample configs
     derive from the registry).
 - **Identity fields**: name (required), npm name, description, domain,
-  repo url — derived from the git origin when it isn't the template's.
+  repo url — derived from the git origin when it isn't the template's
+  (compared case-insensitively). Given or derived, it's normalized to a web
+  url so API-docs source links work: ssh forms (`git@host:path`,
+  `ssh://git@host/path`) become https without their ssh port, userinfo (a
+  user or token) is stripped, the scheme is lowercased, a trailing `/` and
+  `.git` are stripped, and `http://` is kept as-is; input that isn't a git
+  url (a bare `owner/repo`, a local path) is refused with exit 2.
+  Keeping `docs` requires a repo url (the API docs link to source, and
+  fuz_ui's `Library` refuses a package without one): non-interactive runs
+  without one exit 2, and the wizard asks for it — an empty answer strips
+  default-kept docs, while `--keep docs` re-prompts until answered.
 - **Self-verifying**: `cargo molt check` / `npm run molt -- check` and both
   twins' tests verify every anchor against the working tree — and that the
   workspace manifest template stays byte-identical to the live root

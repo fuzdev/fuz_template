@@ -229,6 +229,26 @@ export const validate_domain = (domain: string): void => {
 };
 
 /**
+ * Parses a repository url given as a flag or wizard answer into its web url
+ * via `to_repo_url`, so an ssh remote pasted as-is still yields working
+ * source links in the API docs.
+ */
+export const parse_repo_url = (value: string): string => {
+	const url = to_repo_url(value);
+	if (url === null) {
+		// quoted with `json_escape`, not `JSON.stringify`, so both twins print it alike
+		throw CliError.usage(
+			`invalid repository url "${json_escape(trim_url(value))}": expected an https, http, or ssh git url like https://github.com/you/app`
+		);
+	}
+	return url;
+};
+
+/** Like `parse_repo_url`, but blank input (after `trim_url`) is no url. */
+export const parse_optional_repo_url = (value: string): string | null =>
+	trim_url(value) === '' ? null : parse_repo_url(value);
+
+/**
  * Escapes a string for embedding in a JSON string literal (also valid for
  * TOML basic strings, which share the `\"`/`\\`/`\n` escapes).
  */
@@ -404,13 +424,30 @@ export const empty_groups = (kept: Set<string>): Array<string> =>
 /* git — twin of `crates/molt/src/git.rs` */
 
 /**
+ * Repo-locating git variables that git hooks set — cleared for every git
+ * call so git always resolves the repo from the given root.
+ */
+const INHERITED_GIT_ENV = [
+	'GIT_DIR',
+	'GIT_WORK_TREE',
+	'GIT_INDEX_FILE',
+	'GIT_COMMON_DIR',
+	'GIT_OBJECT_DIRECTORY'
+] as const;
+
+/**
  * Runs a git command at `root`, returning its stdout on success and `null`
- * on a nonzero exit (e.g. no `origin` remote configured).
+ * on a nonzero exit (e.g. no `origin` remote configured). Clears the
+ * `INHERITED_GIT_ENV` variables so git always resolves the repo from `root`.
  *
  * @throws `CliError` when git can't be spawned at all.
  */
-const git_output = (root: string, args: Array<string>): string | null => {
-	const result = spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+export const git_output = (root: string, args: Array<string>): string | null => {
+	const cleared: ReadonlyArray<string> = INHERITED_GIT_ENV;
+	const env = Object.fromEntries(
+		Object.entries(process.env).filter(([name]) => !cleared.includes(name))
+	);
+	const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', env });
 	if (result.error) {
 		throw CliError.precondition(
 			`failed to run git: ${result.error.message}`,
@@ -421,25 +458,87 @@ const git_output = (root: string, args: Array<string>): string | null => {
 };
 
 /**
- * Normalizes a git remote url (https, scp-style `git@host:`, or
- * `ssh://git@host/`) to an https repository url, returning `null` for the
- * template's own remote (a plain `git clone` of `fuz_template` keeps origin
- * pointed at the template — deriving that would be wrong).
+ * Trims whitespace and byte-order marks from a url, matching the Rust twin's
+ * `trim_url` (JS's `\s` covers U+FEFF but not U+0085, Rust's
+ * `is_whitespace` the reverse, so each twin adds the other's).
  */
-export const normalize_remote_url = (url: string): string | null => {
-	const trimmed_url = url.trim();
-	if (trimmed_url.includes('fuzdev/fuz_template')) return null;
-	let https;
-	if (trimmed_url.startsWith('ssh://git@')) {
-		https = `https://${trimmed_url.slice('ssh://git@'.length)}`;
+export const trim_url = (url: string): string => url.replace(/^[\s\u0085]+|[\s\u0085]+$/g, '');
+
+/**
+ * Converts a repository url in any common git form (https or http,
+ * scp-style `git@host:`, or `ssh://git@host/`) to its web url — the ssh
+ * forms become https without their ssh port, userinfo (a user or token)
+ * is dropped, the scheme is lowercased, an empty port is dropped, a
+ * `?query` or `#fragment` is dropped from the `ssh://` and http(s) forms
+ * (the scp form keeps `?`/`#` as literal path characters), and a trailing
+ * `/` or `.git` is dropped — returning `null` for anything else (a local
+ * path, a bare `owner/repo`, an empty host).
+ */
+export const to_repo_url = (url: string): string | null => {
+	const trimmed_url = trim_url(url);
+	const scheme_end = trimmed_url.indexOf('://');
+	let web;
+	if (scheme_end !== -1) {
+		// ASCII-only, like the Rust twin's `to_ascii_lowercase`
+		const scheme = trimmed_url.slice(0, scheme_end).replace(/[A-Z]/g, (c) => c.toLowerCase());
+		const rest = trimmed_url.slice(scheme_end + '://'.length);
+		if (scheme === 'ssh') {
+			if (!rest.startsWith('git@')) return null;
+			const { authority, path } = split_authority(rest.slice('git@'.length));
+			// the ssh daemon's port (even an empty one) means nothing to the
+			// web host
+			const colon = authority.lastIndexOf(':');
+			const host =
+				colon !== -1 && /^[0-9]*$/.test(authority.slice(colon + 1))
+					? authority.slice(0, colon)
+					: authority;
+			if (host === '' || host.startsWith(':')) return null;
+			web = `https://${host}${path}`;
+		} else if (scheme === 'https' || scheme === 'http') {
+			const { authority, path } = split_authority(rest);
+			// userinfo (a user, or a token) never belongs in a web url
+			const userless = authority.slice(authority.lastIndexOf('@') + 1);
+			// an empty port adds nothing; a host that's only a port is none
+			const host = userless.endsWith(':') ? userless.slice(0, -1) : userless;
+			if (host === '' || host.startsWith(':')) return null;
+			web = `${scheme}://${host}${path}`;
+		} else {
+			return null;
+		}
 	} else if (trimmed_url.startsWith('git@')) {
-		https = `https://${trimmed_url.slice('git@'.length).replace(':', '/')}`;
+		const rest = trimmed_url.slice('git@'.length);
+		if (rest.search(/[:/]/) === 0 || rest === '') return null;
+		web = `https://${rest.replace(':', '/')}`;
 	} else {
-		https = trimmed_url;
+		return null;
 	}
-	const trimmed = https.endsWith('.git') ? https.slice(0, -'.git'.length) : https;
-	return trimmed.startsWith('https://') ? trimmed : null;
+	if (web.endsWith('/')) web = web.slice(0, -1);
+	if (web.endsWith('.git')) web = web.slice(0, -'.git'.length);
+	const separator = web.indexOf('://');
+	return separator !== -1 && web.length > separator + '://'.length ? web : null;
 };
+
+/**
+ * Splits a url's remainder after `scheme://` into its authority, which ends
+ * at the first `/`, `?`, or `#`, and its path, dropping any `?query` or
+ * `#fragment` (meaningless for a repository url).
+ */
+const split_authority = (rest: string): { authority: string; path: string } => {
+	const end = rest.search(/[/?#]/);
+	const authority = end === -1 ? rest : rest.slice(0, end);
+	const tail = end === -1 ? '' : rest.slice(end);
+	const path_end = tail.search(/[?#]/);
+	return { authority, path: path_end === -1 ? tail : tail.slice(0, path_end) };
+};
+
+/**
+ * Normalizes the git origin url with `to_repo_url`, returning `null` for
+ * the template's own remote (a plain `git clone` of `fuz_template` keeps
+ * origin pointed at the template — deriving that would be wrong). GitHub
+ * owner and repo names are case-insensitive, so the check is too.
+ */
+export const normalize_remote_url = (url: string): string | null =>
+	url.toLowerCase().includes('fuzdev/fuz_template') ? null : to_repo_url(url);
 
 /* anchors — twin of `crates/molt/src/anchors.rs` */
 //
@@ -462,18 +561,23 @@ const PACKAGE_JSON_REPOSITORY = '  "repository": "https://github.com/fuzdev/fuz_
 // itself and its check test.
 const PACKAGE_JSON_MOLT_SCRIPT = '    "molt": "node src/lib/molt.ts",\n';
 
-const LAYOUT_LOGO_IMPORT = "\timport {logo_fuz_template} from '@fuzdev/fuz_ui/logos.ts';\n";
+const LAYOUT_LOGO_IMPORT = "\timport { logo_fuz_template } from '@fuzdev/fuz_ui/logos.ts';\n";
 const LAYOUT_SITE_STATE =
-	'\t// `glyph` and `repo_url` derive from `pkg_json`; `icon` stays explicit (structured `SvgData`).\n\tsite_context.set(new SiteState({icon: logo_fuz_template, pkg_json}));';
+	'\t// `glyph` and `repo_url` derive from `pkg_json`; `icon` stays explicit (structured `SvgData`).\n\tsite_context.set(new SiteState({ icon: logo_fuz_template, pkg_json }));';
 const LAYOUT_SITE_STATE_REPLACEMENT =
-	'\t// `glyph` and `repo_url` derive from `pkg_json`.\n\tsite_context.set(new SiteState({pkg_json}));';
+	'\t// `glyph` and `repo_url` derive from `pkg_json`.\n\tsite_context.set(new SiteState({ pkg_json }));';
 const LAYOUT_TITLE = '<title>@fuzdev/fuz_template</title>';
 
-const PAGE_MREOWS_IMPORT = "import Mreows, {mreow_items} from '$lib/Mreows.svelte';";
+const PAGE_MREOWS_IMPORT = "import Mreows, { mreow_items } from '$lib/Mreows.svelte';";
 const H1_FUZ_TEMPLATE = '<h1 class="mt_xl2">fuz_template</h1>';
 
 // the docs system's tooling, stripped with the `docs` feature
-const PACKAGE_JSON_SVELTE_DOCINFO = '    "svelte-docinfo": "^0.5.3",\n';
+// A line prefix, not a whole line — the version churns with every upgrade,
+// so the plan removes the one line starting with it.
+const PACKAGE_JSON_SVELTE_DOCINFO = '    "svelte-docinfo": "';
+// The svelte-docinfo line's required ending — its trailing comma proves it
+// isn't the last entry, whose removal would strand the previous line's comma.
+const PACKAGE_JSON_SVELTE_DOCINFO_SUFFIX = '",\n';
 const VITE_DOCINFO_IMPORT = "import svelte_docinfo from 'svelte-docinfo/vite.js';\n";
 const VITE_DOCINFO_PLUGIN = 'svelte_docinfo(), ';
 const APP_D_TS_DOCINFO =
@@ -484,6 +588,13 @@ const FUNDING_GITHUB = 'github: ryanatkn';
 // The template's repo url as it appears in the issue-template discussion
 // links — replaced with the molted project's repo url when derivable.
 const TEMPLATE_REPO_URL = 'https://github.com/fuzdev/fuz_template';
+
+// molt's note in the `.gitattributes` header, rewritten on eject so the
+// molted project's LF rule doesn't cite anchors that no longer exist.
+const GITATTRIBUTES_MOLT_NOTE =
+	"# Force LF on checkout everywhere: molt's exact-content anchors embed `\\n`,\n# so a CRLF working tree (e.g. Windows autocrlf) would fail every anchor.\n";
+const GITATTRIBUTES_MOLT_NOTE_REPLACEMENT =
+	'# Force LF on checkout everywhere, even under Windows autocrlf.\n';
 
 const README_H1 = '# @fuzdev/fuz_template ❄';
 const CLAUDE_H1 = '# fuz_template\n';
@@ -501,6 +612,11 @@ const APP_CLI_DESCRIPTION = 'description = "a CLI scaffolded by fuz_template\'s 
 // The starter CLI crate's license inheritance line, stripped on eject
 // (the workspace's license line goes with it).
 const APP_CLI_LICENSE = 'license.workspace = true\n';
+
+// The comment inside `CI_RUST_JOB` pointing at the anchors — removed on eject
+// when the job is kept, since molt's crate is gone.
+const CI_RUST_JOB_MOLT_COMMENT =
+	'    # molt anchors this job (crates/molt/src/anchors.rs) so stripping\n    # the rust feature can remove it — update the anchor when editing.\n';
 
 // The `rust` job appended to `.github/workflows/check.yml` — kept here as an
 // exact-match anchor so stripping the `rust` feature can remove it.
@@ -536,6 +652,7 @@ export interface Templates {
 	CLAUDE_RUST_SECTION: string;
 	WORKSPACE_CARGO_TOML: string;
 	FUNDING_YML: string;
+	EXAMPLE_TS: string;
 }
 
 export const load_templates = (root: string): Templates => {
@@ -548,7 +665,8 @@ export const load_templates = (root: string): Templates => {
 		README_RUST_SECTION: template('readme_rust_section.md.in'),
 		CLAUDE_RUST_SECTION: template('claude_rust_section.md.in'),
 		WORKSPACE_CARGO_TOML: template('workspace_cargo.toml.in'),
-		FUNDING_YML: template('funding.yml.in')
+		FUNDING_YML: template('funding.yml.in'),
+		EXAMPLE_TS: template('example.ts.in')
 	};
 };
 
@@ -594,8 +712,10 @@ export const render = (template: string, substitutions: Array<[string, string]>)
  */
 export type Action =
 	| { kind: 'replace_once'; path: string; anchor: string; replacement: string; label: string }
+	| { kind: 'remove_line'; path: string; prefix: string; suffix: string; label: string }
 	| { kind: 'replace_all'; path: string; from: string; to: string; label: string }
 	| { kind: 'replace_file'; path: string; anchors: Array<string>; content: string; label: string }
+	| { kind: 'create_file'; path: string; content: string; label: string }
 	| { kind: 'rename_dir'; from: string; to: string }
 	| { kind: 'delete_file'; path: string }
 	| { kind: 'delete_dir'; path: string };
@@ -603,10 +723,13 @@ export type Action =
 export const describe = (action: Action): string => {
 	switch (action.kind) {
 		case 'replace_once':
+		case 'remove_line':
 		case 'replace_all':
 			return `edit    ${action.path} — ${action.label}`;
 		case 'replace_file':
 			return `rewrite ${action.path} — ${action.label}`;
+		case 'create_file':
+			return `create  ${action.path} — ${action.label}`;
 		case 'rename_dir':
 			return `rename  ${action.from}/ → ${action.to}/`;
 		case 'delete_file':
@@ -628,6 +751,27 @@ const replace_once = (
 	replacement,
 	label
 });
+
+/**
+ * The ranges of the lines in `content` that start with `prefix`, each
+ * including its trailing newline when it has one.
+ */
+export const lines_with_prefix = (
+	content: string,
+	prefix: string
+): Array<{ start: number; end: number }> => {
+	const ranges: Array<{ start: number; end: number }> = [];
+	let start = 0;
+	while (start < content.length) {
+		const newline = content.indexOf('\n', start);
+		const end = newline === -1 ? content.length : newline + 1;
+		if (content.slice(start, end).startsWith(prefix)) {
+			ranges.push({ start, end });
+		}
+		start = end;
+	}
+	return ranges;
+};
 
 /** Builds the full molt plan from resolved choices. Pure — reads nothing. */
 export const build_plan = (config: MoltConfig, templates: Templates): Array<Action> => {
@@ -666,6 +810,14 @@ export const build_plan = (config: MoltConfig, templates: Templates): Array<Acti
 	plan.push(replace_once('package.json', PACKAGE_JSON_MOLT_SCRIPT, '', 'remove the molt script'));
 	plan.push({ kind: 'delete_file', path: 'src/lib/molt.ts' });
 	plan.push({ kind: 'delete_file', path: 'src/test/molt.test.ts' });
+	plan.push(
+		replace_once(
+			'.gitattributes',
+			GITATTRIBUTES_MOLT_NOTE,
+			GITATTRIBUTES_MOLT_NOTE_REPLACEMENT,
+			"drop molt's note from the LF rule"
+		)
+	);
 
 	const homepage_replacement =
 		config.domain === null ? '' : `  "homepage": "https://${config.domain}/",\n`;
@@ -734,19 +886,28 @@ export const build_plan = (config: MoltConfig, templates: Templates): Array<Acti
 	);
 	plan.push({ kind: 'delete_file', path: 'src/lib/Mreows.svelte' });
 	plan.push({ kind: 'delete_file', path: 'src/lib/Positioned.svelte' });
+	// the API docs prerender a page per `src/lib/` module, so deleting the
+	// demo components would leave the docs build with no pages to render
+	if (keeps(config, DOCS)) {
+		plan.push({
+			kind: 'create_file',
+			path: 'src/lib/example.ts',
+			content: render(templates.EXAMPLE_TS, [['__NAME__', name]]),
+			label: 'starter module (the API docs need one)'
+		});
+	}
 
 	// docs system, and the svelte-docinfo tooling that exists only for it
 	if (!keeps(config, DOCS)) {
 		plan.push({ kind: 'delete_dir', path: 'src/routes/docs' });
 		plan.push({ kind: 'delete_file', path: 'src/routes/library.ts' });
-		plan.push(
-			replace_once(
-				'package.json',
-				PACKAGE_JSON_SVELTE_DOCINFO,
-				'',
-				'remove the svelte-docinfo devDependency'
-			)
-		);
+		plan.push({
+			kind: 'remove_line',
+			path: 'package.json',
+			prefix: PACKAGE_JSON_SVELTE_DOCINFO,
+			suffix: PACKAGE_JSON_SVELTE_DOCINFO_SUFFIX,
+			label: 'remove the svelte-docinfo devDependency'
+		});
 		plan.push(
 			replace_once('vite.config.ts', VITE_DOCINFO_IMPORT, '', 'remove the svelte-docinfo import')
 		);
@@ -866,6 +1027,14 @@ export const build_plan = (config: MoltConfig, templates: Templates): Array<Acti
 		);
 		plan.push({ kind: 'rename_dir', from: 'crates/app_cli', to: `crates/${name}` });
 		plan.push({ kind: 'delete_dir', path: 'crates/molt' });
+		plan.push(
+			replace_once(
+				'.github/workflows/check.yml',
+				CI_RUST_JOB_MOLT_COMMENT,
+				'',
+				"remove molt's note from the rust job"
+			)
+		);
 	} else {
 		plan.push(replace_once('.github/workflows/check.yml', CI_RUST_JOB, '', 'remove the rust job'));
 		for (const path of ['Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'clippy.toml']) {
@@ -910,6 +1079,24 @@ export const verify = (root: string, plan: Array<Action>): Array<string> => {
 				}
 				break;
 			}
+			case 'remove_line': {
+				const content = read(root, action.path);
+				if (content === null) {
+					issues.push(`${action.path}: file missing`);
+				} else {
+					const lines = lines_with_prefix(content, action.prefix);
+					if (lines.length !== 1) {
+						issues.push(
+							`${action.path}: line prefix matched ${lines.length} lines (expected exactly 1): ${JSON.stringify(action.prefix)}`
+						);
+					} else if (!content.slice(lines[0]!.start, lines[0]!.end).endsWith(action.suffix)) {
+						issues.push(
+							`${action.path}: the line starting with ${JSON.stringify(action.prefix)} doesn't end with ${JSON.stringify(action.suffix)}`
+						);
+					}
+				}
+				break;
+			}
 			case 'replace_all': {
 				const content = read(root, action.path);
 				if (content === null) {
@@ -934,6 +1121,10 @@ export const verify = (root: string, plan: Array<Action>): Array<string> => {
 				}
 				break;
 			}
+			// a create target in the way is `conflicts`' job — its fix is
+			// moving the file aside, not restoring it
+			case 'create_file':
+				break;
 			case 'rename_dir': {
 				if (!is_dir(join(root, action.from))) {
 					issues.push(`${action.from}: expected a directory to rename`);
@@ -959,6 +1150,17 @@ export const verify = (root: string, plan: Array<Action>): Array<string> => {
 	}
 	return issues;
 };
+
+/**
+ * Lists the files the plan creates that already exist at `root`, kept apart
+ * from `verify`'s drift because the remedy differs.
+ */
+export const conflicts = (root: string, plan: Array<Action>): Array<string> =>
+	plan.flatMap((action) =>
+		action.kind === 'create_file' && existsSync(join(root, action.path))
+			? [`${action.path}: already exists, and molt creates it`]
+			: []
+	);
 
 const read = (root: string, path: string): string | null => {
 	try {
@@ -988,8 +1190,9 @@ const is_dir = (path: string): boolean => {
 /* apply — twin of `crates/molt/src/apply.rs` */
 
 /**
- * Applies a verified plan at `root`. Callers must run `verify` first —
- * apply assumes anchors match and targets exist.
+ * Applies a verified plan at `root`. Callers must run `verify` and
+ * `conflicts` first — apply assumes anchors match, targets exist, and
+ * nothing is in the way of created files.
  */
 export const apply = (root: string, plan: Array<Action>): void => {
 	for (const action of plan) {
@@ -1002,6 +1205,14 @@ export const apply = (root: string, plan: Array<Action>): void => {
 				writeFileSync(full, updated);
 				break;
 			}
+			case 'remove_line': {
+				const full = join(root, action.path);
+				const content = readFileSync(full, 'utf8');
+				const line = lines_with_prefix(content, action.prefix)[0];
+				const updated = line ? content.slice(0, line.start) + content.slice(line.end) : content;
+				writeFileSync(full, updated);
+				break;
+			}
 			case 'replace_all': {
 				const full = join(root, action.path);
 				const content = readFileSync(full, 'utf8');
@@ -1009,7 +1220,8 @@ export const apply = (root: string, plan: Array<Action>): void => {
 				writeFileSync(full, updated);
 				break;
 			}
-			case 'replace_file': {
+			case 'replace_file':
+			case 'create_file': {
 				writeFileSync(join(root, action.path), action.content);
 				break;
 			}
@@ -1031,16 +1243,27 @@ export const apply = (root: string, plan: Array<Action>): void => {
 
 /* check — twin of `crates/molt/src/check.rs` */
 
+/** What `check_all` found, split by remedy. */
+export interface CheckIssues {
+	/** Anchors or embedded templates the template drifted from. */
+	drift: Array<string>;
+	/** Template files in the way of files molt creates. */
+	conflicts: Array<string>;
+}
+
 /**
  * Verifies the plans for both sample configs, covering every anchor molt can
  * touch (each feature exercised kept in one config and stripped in the other),
  * plus the embedded-template invariants that anchors alone can't see.
  */
-export const check_all = (root: string): Array<string> => {
+export const check_all = (root: string): CheckIssues => {
 	const templates = load_templates(root);
 	const issues: Array<string> = [];
+	const conflict_issues: Array<string> = [];
 	for (const config of sample_configs()) {
-		issues.push(...verify(root, build_plan(config, templates)));
+		const plan = build_plan(config, templates);
+		issues.push(...verify(root, plan));
+		conflict_issues.push(...conflicts(root, plan));
 	}
 	// the workspace template must stay byte-identical to the live root
 	// Cargo.toml apart from the members and license lines — otherwise an edit
@@ -1056,8 +1279,12 @@ export const check_all = (root: string): Array<string> => {
 			'Cargo.toml: drifted from crates/molt/templates/workspace_cargo.toml.in (only the members and license lines may differ)'
 		);
 	}
-	issues.sort();
-	return issues.filter((issue, i) => issue !== issues[i - 1]);
+	return { drift: sort_unique(issues), conflicts: sort_unique(conflict_issues) };
+};
+
+const sort_unique = (items: Array<string>): Array<string> => {
+	items.sort();
+	return items.filter((item, i) => item !== items[i - 1]);
 };
 
 /**
@@ -1088,21 +1315,30 @@ export const sample_configs = (): [MoltConfig, MoltConfig] => [
 
 /** Runs `molt check`: verifies every anchor and template invariant. */
 const check_run = (root: string): number => {
-	const issues = check_all(root);
-	if (issues.length === 0) {
+	const { drift, conflicts: conflict_issues } = check_all(root);
+	if (drift.length === 0 && conflict_issues.length === 0) {
 		console.log('molt check passed: all anchors and embedded templates match');
 		return 0;
 	}
-	console.error(
-		"molt check failed — the template drifted from molt's anchors or embedded templates:"
-	);
-	for (const issue of issues) {
-		console.error(`  ${issue}`);
+	if (drift.length > 0) {
+		console.error(
+			"molt check failed — the template drifted from molt's anchors or embedded templates:"
+		);
+		for (const issue of drift) {
+			console.error(`  ${issue}`);
+		}
+		console.error(
+			'(update the anchors in crates/molt/src/anchors.rs and src/lib/molt.ts, and the shared templates in crates/molt/templates/, in the same change)'
+		);
 	}
-	console.error(
-		'(update the anchors in src/lib/molt.ts — and the Rust twin in crates/molt — in the same change)'
-	);
-	// drift is caller-must-fix, same dialect as CliError kind 'drift'
+	if (conflict_issues.length > 0) {
+		console.error('molt check failed — template files are in the way of files molt creates:');
+		for (const issue of conflict_issues) {
+			console.error(`  ${issue}`);
+		}
+		console.error('(molt creates these on eject — remove or rename them in the template)');
+	}
+	// both are caller-must-fix, same dialect as CliError kind 'drift'
 	return 2;
 };
 
@@ -1118,24 +1354,34 @@ const get_rl = (): readline.Interface => {
 	return rl;
 };
 
+// TODO: two parity gaps with the Rust twin's line reads. Pasted type-ahead
+// is dropped — lines that arrive before a question is asked are consumed by
+// readline and lost — and Ctrl-D closes readline, so every remaining prompt
+// takes its default, where Rust takes the default for that one prompt and
+// keeps reading. Likely fix: a line queue fed by `rl.on('line')`, with the
+// prompts printed manually and EOF resolving only the pending question.
 /** Asks a question, resolving `null` on EOF (Ctrl-D) instead of hanging. */
 const question = (query: string): Promise<string | null> =>
 	new Promise((question_resolve) => {
 		const iface = get_rl();
 		let settled = false;
+		const on_close = (): void => {
+			if (!settled) question_resolve(null);
+		};
+		// detached once answered, so a long wizard never piles up listeners
+		iface.once('close', on_close);
 		iface.question(query).then(
 			(line) => {
 				settled = true;
+				iface.off('close', on_close);
 				question_resolve(line);
 			},
 			() => {
 				settled = true;
+				iface.off('close', on_close);
 				question_resolve(null);
 			}
 		);
-		iface.once('close', () => {
-			if (!settled) question_resolve(null);
-		});
 	});
 
 /** Prompts for a line; returns the resolved value and whether stdin hit EOF. */
@@ -1192,7 +1438,7 @@ const prompt_bool = async (label: string, default_value: boolean): Promise<boole
 
 /* cli — twin of `crates/molt/src/cli.rs` */
 
-interface TopLevel {
+export interface TopLevel {
 	name: string | null;
 	npm_name: string | null;
 	description: string | null;
@@ -1221,7 +1467,8 @@ Flags:
   --domain <domain>     custom domain written to static/CNAME (omit to
                         delete CNAME and homepage)
   --repo <url>          repository url (defaults to the git origin remote
-                        when it isn't the template's)
+                        when it isn't the template's; required to keep
+                        docs, whose API pages link to source)
   --keep <ids>          features to keep, comma-separated or repeated
                         (rust, cli, docs, github-extras)
   --strip <ids>         features to strip, comma-separated or repeated
@@ -1241,7 +1488,7 @@ Subcommands:
  *
  * @throws `CliError` on unknown flags or a bad subcommand.
  */
-const parse_top_level = (args: Array<string>): TopLevel | null => {
+export const parse_top_level = (args: Array<string>): TopLevel | null => {
 	let parsed;
 	try {
 		parsed = parseArgs({
@@ -1382,8 +1629,7 @@ const molt = async (top: TopLevel, root: string): Promise<number> => {
 	const config = await resolve_config(top, root, is_interactive);
 	const templates = load_templates(root);
 	const plan = build_plan(config, templates);
-	const issues = verify(root, plan);
-	if (issues.length > 0) throw CliError.drift(issues);
+	ensure_applicable(root, plan);
 
 	console.log(`\nmolt plan (${plan.length} actions):`);
 	for (const action of plan) {
@@ -1428,15 +1674,31 @@ const molt = async (top: TopLevel, root: string): Promise<number> => {
 	if (gate === 'confirm' || gate === 'confirm_dirty') {
 		// the tree may have changed while the prompt waited — apply would
 		// silently skip an edit whose anchor disappeared, so verify again
-		const reverify_issues = verify(root, plan);
-		if (reverify_issues.length > 0) throw CliError.drift(reverify_issues);
+		ensure_applicable(root, plan);
 	}
 	apply(root, plan);
 	print_next_steps(config, clean);
 	return 0;
 };
 
-const resolve_config = async (
+/** Refuses a plan whose create targets are in the way or whose anchors drifted. */
+const ensure_applicable = (root: string, plan: Array<Action>): void => {
+	const conflict_issues = conflicts(root, plan);
+	if (conflict_issues.length > 0) {
+		throw CliError.precondition(
+			`these files are in the way of files molt creates:\n${conflict_issues.join('\n')}`,
+			'remove or rename the listed files, then rerun molt'
+		);
+	}
+	const issues = verify(root, plan);
+	if (issues.length > 0) throw CliError.drift(issues);
+};
+
+/** The non-interactive refusal to keep docs without a repository url. */
+export const DOCS_NEEDS_REPO =
+	'keeping docs needs a repository url (the API docs link to source) — pass --repo <url>, or --strip docs';
+
+export const resolve_config = async (
 	top: TopLevel,
 	root: string,
 	is_interactive: boolean
@@ -1494,9 +1756,13 @@ const resolve_config = async (
 	const derived_repo = origin === null ? null : normalize_remote_url(origin);
 	let repo_url: string | null;
 	if (top.repo !== null) {
-		repo_url = non_empty(top.repo);
+		repo_url = parse_optional_repo_url(top.repo);
 	} else if (is_interactive) {
-		repo_url = non_empty(await prompt('repository url (optional)', derived_repo));
+		repo_url = await prompt_repo_url(
+			'repository url (optional, but needed to keep docs)',
+			derived_repo,
+			false
+		);
 	} else {
 		repo_url = derived_repo;
 	}
@@ -1574,7 +1840,51 @@ const resolve_config = async (
 		);
 	}
 
+	// the API docs link each module to its source, and fuz_ui's `Library`
+	// refuses a package without a repository — a placeholder would ship
+	// broken links, so kept docs need a real repo url
+	if (kept.has(DOCS) && repo_url === null) {
+		if (!is_interactive) throw CliError.usage(DOCS_NEEDS_REPO);
+		if (explicit.has(DOCS)) {
+			repo_url = await prompt_repo_url(
+				'repository url (required by --keep docs — the API docs link to source)',
+				null,
+				true
+			);
+		} else {
+			repo_url = await prompt_repo_url(
+				'repository url (the API docs link to source; empty strips docs)',
+				null,
+				false
+			);
+			if (repo_url === null) {
+				console.log('note: no repository url — stripping docs (the API docs link to source)');
+				kept.delete(DOCS);
+				cascade(kept);
+			}
+		}
+	}
+
 	return { name, npm_name, description, domain, repo_url, kept };
+};
+
+/**
+ * Prompts for a repository url, re-asking until the answer parses (and,
+ * when `required`, until there is one); an empty answer yields `null`.
+ */
+const prompt_repo_url = async (
+	label: string,
+	default_value: string | null,
+	required: boolean
+): Promise<string | null> => {
+	const answer = await prompt_validated(label, default_value, (value) => {
+		if (trim_url(value) !== '') {
+			parse_repo_url(value);
+		} else if (required) {
+			throw CliError.usage('a repository url is required to keep docs');
+		}
+	});
+	return parse_optional_repo_url(answer);
 };
 
 const non_empty = (value: string): string | null => {

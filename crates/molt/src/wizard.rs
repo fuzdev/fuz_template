@@ -35,6 +35,9 @@ pub fn prompt_validated(
     }
 }
 
+// TODO: Ctrl-D parity gap — here EOF takes the default for this one prompt
+// and later prompts keep reading, while the TS twin's `question()` closes
+// readline so every remaining prompt takes its default (see the TODO there)
 /// Prompts for a line; returns the resolved value and whether stdin hit EOF.
 fn prompt_raw(label: &str, default: Option<&str>) -> Result<(String, bool), CliError> {
     let mut stdout = io::stdout().lock();

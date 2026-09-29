@@ -124,7 +124,9 @@ What it does, driven by your answers:
 
 - renames the project everywhere (`package.json`, page titles, headings)
 - updates or removes `static/CNAME`, `homepage`, and `repository`
-- deletes the demo components and writes a minimal starting page
+- deletes the demo components and writes a minimal starting page (plus a
+  starter `src/lib/example.ts` when docs are kept — the API docs need a
+  module to document)
 - regenerates `README.md` and `CLAUDE.md` for your project
 - deletes the template's MIT `LICENSE` and `license` fields — your project
   chooses its own license
@@ -133,7 +135,12 @@ What it does, driven by your answers:
   your project name), `docs` (the docs system), and `github-extras`
   (funding + issue templates, personalized when kept) — via prompts or
   `--keep`/`--strip` lists (e.g. `--strip rust` or `--keep github-extras --strip docs`);
-  stripping `cli` alone is rejected — a kept workspace needs a crate
+  stripping `cli` alone is rejected — a kept workspace needs a crate, and
+  keeping `docs` needs a repository url (the API docs link to source), from
+  `--repo` or a git origin that isn't the template's — the wizard asks when
+  there's none; `--repo` takes an https, http, or ssh git url (normalized to its
+  web url, with any credentials stripped) and refuses anything else with
+  exit 2
 - deletes both of its own implementations (the crate, the script, and its tests)
 
 It refuses to run without a clean git tree, so an applied plan can be undone

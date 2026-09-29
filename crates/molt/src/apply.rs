@@ -2,10 +2,11 @@ use std::fs;
 use std::path::Path;
 
 use crate::error::CliError;
-use crate::plan::Action;
+use crate::plan::{Action, lines_with_prefix};
 
-/// Applies a verified plan at `root`. Callers must run `plan::verify` first —
-/// apply assumes anchors match and targets exist.
+/// Applies a verified plan at `root`. Callers must run `plan::verify` and
+/// `plan::conflicts` first — apply assumes anchors match, targets exist, and
+/// nothing is in the way of created files.
 pub fn apply(root: &Path, plan: &[Action]) -> Result<(), CliError> {
     for action in plan {
         match action {
@@ -23,6 +24,17 @@ pub fn apply(root: &Path, plan: &[Action]) -> Result<(), CliError> {
                 let updated = content.replacen(anchor.as_str(), replacement, 1);
                 fs::write(&full, updated).map_err(|source| CliError::Io { path: full, source })?;
             }
+            Action::RemoveLine { path, prefix, .. } => {
+                let full = root.join(path);
+                let mut content = fs::read_to_string(&full).map_err(|source| CliError::Io {
+                    path: full.clone(),
+                    source,
+                })?;
+                if let Some(line) = lines_with_prefix(&content, prefix).into_iter().next() {
+                    content.replace_range(line, "");
+                }
+                fs::write(&full, content).map_err(|source| CliError::Io { path: full, source })?;
+            }
             Action::ReplaceAll { path, from, to, .. } => {
                 let full = root.join(path);
                 let content = fs::read_to_string(&full).map_err(|source| CliError::Io {
@@ -32,7 +44,8 @@ pub fn apply(root: &Path, plan: &[Action]) -> Result<(), CliError> {
                 let updated = content.replace(from.as_str(), to);
                 fs::write(&full, updated).map_err(|source| CliError::Io { path: full, source })?;
             }
-            Action::ReplaceFile { path, content, .. } => {
+            Action::ReplaceFile { path, content, .. }
+            | Action::CreateFile { path, content, .. } => {
                 let full = root.join(path);
                 fs::write(&full, content).map_err(|source| CliError::Io { path: full, source })?;
             }
@@ -63,7 +76,7 @@ mod tests {
 
     use super::*;
     use crate::check::sample_configs;
-    use crate::plan::{build_plan, verify};
+    use crate::plan::{build_plan, conflicts, verify};
 
     fn repo_root() -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -81,6 +94,7 @@ mod tests {
             copy_dir(&root.join(dir), &destination.join(dir));
         }
         for file in [
+            ".gitattributes",
             "package.json",
             "README.md",
             "CLAUDE.md",
@@ -135,6 +149,7 @@ mod tests {
         let plan = build_plan(&config);
         let issues = verify(&dir, &plan).unwrap();
         assert!(issues.is_empty(), "verify issues: {issues:#?}");
+        assert!(conflicts(&dir, &plan).is_empty());
         apply(&dir, &plan).unwrap();
 
         let package_json = read(&dir, "package.json");
@@ -151,6 +166,9 @@ mod tests {
         assert!(!package_json.contains("\"molt\""));
         assert!(!dir.join("src/lib/molt.ts").exists());
         assert!(!dir.join("src/test/molt.test.ts").exists());
+        // nor do molt's notes in the files that outlive it
+        assert!(!read(&dir, ".gitattributes").contains("molt"));
+        assert!(read(&dir, ".gitattributes").contains("eol=lf"));
 
         let layout = read(&dir, "src/routes/+layout.svelte");
         assert!(!layout.contains("logo_fuz_template"));
@@ -164,8 +182,9 @@ mod tests {
         assert!(!dir.join("src/lib/Mreows.svelte").exists());
         assert!(!dir.join("src/lib/Positioned.svelte").exists());
 
-        // docs kept
+        // docs kept, with a starter module so the API docs have a page
         assert!(dir.join("src/routes/docs").is_dir());
+        assert!(read(&dir, "src/lib/example.ts").contains("from sample_app"));
         assert!(dir.join("src/routes/library.ts").is_file());
 
         assert!(read(&dir, "README.md").starts_with("# @sample/sample_app"));
@@ -186,7 +205,9 @@ mod tests {
         assert!(
             !read(&dir, ".github/ISSUE_TEMPLATE/preapproved.md").contains("fuzdev/fuz_template")
         );
-        assert!(read(&dir, ".github/workflows/check.yml").contains("cargo clippy"));
+        let workflow = read(&dir, ".github/workflows/check.yml");
+        assert!(workflow.contains("cargo clippy"));
+        assert!(!workflow.contains("molt"));
 
         // docs kept: the svelte-docinfo tooling stays
         assert!(package_json.contains("svelte-docinfo"));
@@ -221,6 +242,7 @@ mod tests {
         let plan = build_plan(&config);
         let issues = verify(&dir, &plan).unwrap();
         assert!(issues.is_empty(), "verify issues: {issues:#?}");
+        assert!(conflicts(&dir, &plan).is_empty());
         apply(&dir, &plan).unwrap();
 
         let package_json = read(&dir, "package.json");
@@ -248,6 +270,7 @@ mod tests {
         // docs stripped, along with the svelte-docinfo tooling
         assert!(!dir.join("src/routes/docs").exists());
         assert!(!dir.join("src/routes/library.ts").exists());
+        assert!(!dir.join("src/lib/example.ts").exists());
         let page = read(&dir, "src/routes/+page.svelte");
         assert!(!page.contains("resolve('/docs')"));
         assert!(page.contains("resolve('/about')"));

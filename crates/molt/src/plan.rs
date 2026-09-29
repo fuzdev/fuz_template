@@ -1,4 +1,5 @@
 use std::fs;
+use std::ops::Range;
 use std::path::{Path, PathBuf};
 
 use crate::anchors;
@@ -18,6 +19,15 @@ pub enum Action {
         replacement: String,
         label: String,
     },
+    /// Remove the one line starting with `prefix` (exactly one must), which
+    /// must end with `suffix` (newline included), for lines whose middle
+    /// churns, like a dependency's version.
+    RemoveLine {
+        path: PathBuf,
+        prefix: String,
+        suffix: String,
+        label: String,
+    },
     /// Replace every occurrence of `from` (which must appear at least once).
     ReplaceAll {
         path: PathBuf,
@@ -33,6 +43,12 @@ pub enum Action {
         content: String,
         label: String,
     },
+    /// Create a file; `path` must not exist yet.
+    CreateFile {
+        path: PathBuf,
+        content: String,
+        label: String,
+    },
     /// Rename a directory; `to` must not exist yet.
     RenameDir { from: PathBuf, to: PathBuf },
     /// Delete a file.
@@ -44,11 +60,16 @@ pub enum Action {
 impl Action {
     pub fn describe(&self) -> String {
         match self {
-            Self::ReplaceOnce { path, label, .. } | Self::ReplaceAll { path, label, .. } => {
+            Self::ReplaceOnce { path, label, .. }
+            | Self::RemoveLine { path, label, .. }
+            | Self::ReplaceAll { path, label, .. } => {
                 format!("edit    {} — {label}", path.display())
             }
             Self::ReplaceFile { path, label, .. } => {
                 format!("rewrite {} — {label}", path.display())
+            }
+            Self::CreateFile { path, label, .. } => {
+                format!("create  {} — {label}", path.display())
             }
             Self::RenameDir { from, to } => {
                 format!("rename  {}/ → {}/", from.display(), to.display())
@@ -71,6 +92,23 @@ fn replace_once(
         replacement: replacement.into(),
         label: label.into(),
     }
+}
+
+/// The byte ranges of the lines in `content` that start with `prefix`, each
+/// including its trailing newline when it has one.
+pub fn lines_with_prefix(content: &str, prefix: &str) -> Vec<Range<usize>> {
+    let mut ranges = Vec::new();
+    let mut start = 0;
+    while start < content.len() {
+        let end = content[start..]
+            .find('\n')
+            .map_or(content.len(), |i| start + i + 1);
+        if content[start..end].starts_with(prefix) {
+            ranges.push(start..end);
+        }
+        start = end;
+    }
+    ranges
 }
 
 /// Builds the full molt plan from resolved choices. Pure — reads nothing.
@@ -132,6 +170,12 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
     plan.push(Action::DeleteFile {
         path: PathBuf::from("src/test/molt.test.ts"),
     });
+    plan.push(replace_once(
+        ".gitattributes",
+        anchors::GITATTRIBUTES_MOLT_NOTE,
+        anchors::GITATTRIBUTES_MOLT_NOTE_REPLACEMENT,
+        "drop molt's note from the LF rule",
+    ));
     let homepage_replacement = config.domain.as_ref().map_or_else(String::new, |domain| {
         format!("  \"homepage\": \"https://{domain}/\",\n")
     });
@@ -217,6 +261,15 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
     plan.push(Action::DeleteFile {
         path: PathBuf::from("src/lib/Positioned.svelte"),
     });
+    // the API docs prerender a page per `src/lib/` module, so deleting the
+    // demo components would leave the docs build with no pages to render
+    if config.keeps(features::DOCS) {
+        plan.push(Action::CreateFile {
+            path: PathBuf::from("src/lib/example.ts"),
+            content: templates::render(templates::EXAMPLE_TS, &[("__NAME__", name)]),
+            label: "starter module (the API docs need one)".to_owned(),
+        });
+    }
 
     // docs system, and the svelte-docinfo tooling that exists only for it
     if !config.keeps(features::DOCS) {
@@ -226,12 +279,12 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
         plan.push(Action::DeleteFile {
             path: PathBuf::from("src/routes/library.ts"),
         });
-        plan.push(replace_once(
-            "package.json",
-            anchors::PACKAGE_JSON_SVELTE_DOCINFO,
-            String::new(),
-            "remove the svelte-docinfo devDependency",
-        ));
+        plan.push(Action::RemoveLine {
+            path: PathBuf::from("package.json"),
+            prefix: anchors::PACKAGE_JSON_SVELTE_DOCINFO.to_owned(),
+            suffix: anchors::PACKAGE_JSON_SVELTE_DOCINFO_SUFFIX.to_owned(),
+            label: "remove the svelte-docinfo devDependency".to_owned(),
+        });
         plan.push(replace_once(
             "vite.config.ts",
             anchors::VITE_DOCINFO_IMPORT,
@@ -382,6 +435,12 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
         plan.push(Action::DeleteDir {
             path: PathBuf::from("crates/molt"),
         });
+        plan.push(replace_once(
+            ".github/workflows/check.yml",
+            anchors::CI_RUST_JOB_MOLT_COMMENT,
+            String::new(),
+            "remove molt's note from the rust job",
+        ));
     } else {
         plan.push(replace_once(
             ".github/workflows/check.yml",
@@ -435,6 +494,29 @@ pub fn verify(root: &Path, plan: &[Action]) -> Result<Vec<String>, CliError> {
                 }
                 None => issues.push(format!("{}: file missing", path.display())),
             },
+            Action::RemoveLine {
+                path,
+                prefix,
+                suffix,
+                ..
+            } => match read(root, path)? {
+                Some(content) => {
+                    let lines = lines_with_prefix(&content, prefix);
+                    if lines.len() != 1 {
+                        issues.push(format!(
+                            "{}: line prefix matched {} lines (expected exactly 1): {prefix:?}",
+                            path.display(),
+                            lines.len()
+                        ));
+                    } else if !content[lines[0].clone()].ends_with(suffix.as_str()) {
+                        issues.push(format!(
+                            "{}: the line starting with {prefix:?} doesn't end with {suffix:?}",
+                            path.display()
+                        ));
+                    }
+                }
+                None => issues.push(format!("{}: file missing", path.display())),
+            },
             Action::ReplaceAll { path, from, .. } => match read(root, path)? {
                 Some(content) => {
                     if !content.contains(from.as_str()) {
@@ -459,6 +541,9 @@ pub fn verify(root: &Path, plan: &[Action]) -> Result<Vec<String>, CliError> {
                 }
                 None => issues.push(format!("{}: file missing", path.display())),
             },
+            // a create target in the way is `conflicts`' job — its fix is
+            // moving the file aside, not restoring it
+            Action::CreateFile { .. } => {}
             Action::RenameDir { from, to } => {
                 if !root.join(from).is_dir() {
                     issues.push(format!(
@@ -490,11 +575,109 @@ pub fn verify(root: &Path, plan: &[Action]) -> Result<Vec<String>, CliError> {
     Ok(issues)
 }
 
+/// Lists the files the plan creates that already exist at `root`, kept apart
+/// from `verify`'s drift because the remedy differs.
+pub fn conflicts(root: &Path, plan: &[Action]) -> Vec<String> {
+    plan.iter()
+        .filter_map(|action| match action {
+            Action::CreateFile { path, .. } if root.join(path).exists() => Some(format!(
+                "{}: already exists, and molt creates it",
+                path.display()
+            )),
+            _ => None,
+        })
+        .collect()
+}
+
 fn read(root: &Path, path: &Path) -> Result<Option<String>, CliError> {
     let full = root.join(path);
     match fs::read_to_string(&full) {
         Ok(content) => Ok(Some(content)),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
         Err(source) => Err(CliError::Io { path: full, source }),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn lines_with_prefix_matches_whole_lines() {
+        let content = "{\n  \"a\": \"^1.0.0\",\nx  \"a\": \"mid\",\n  \"a\": \"^2.0.0\"";
+        // only line starts count, not the prefix mid-line
+        let ranges = lines_with_prefix(content, "  \"a\": \"");
+        assert_eq!(ranges.len(), 2);
+        assert_eq!(&content[ranges[0].clone()], "  \"a\": \"^1.0.0\",\n");
+        // the last line has no trailing newline
+        assert_eq!(&content[ranges[1].clone()], "  \"a\": \"^2.0.0\"");
+        assert!(lines_with_prefix(content, "  \"c\": ").is_empty());
+        assert!(lines_with_prefix("", "x").is_empty());
+    }
+
+    #[test]
+    fn remove_line_requires_exactly_one_match() {
+        let dir = std::env::temp_dir().join(format!(
+            "fuz_template_molt_test_remove_line_{}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&dir).unwrap();
+        let plan = [Action::RemoveLine {
+            path: PathBuf::from("package.json"),
+            prefix: "  \"a\": \"".to_owned(),
+            suffix: "\",\n".to_owned(),
+            label: "remove a".to_owned(),
+        }];
+        for (content, expected_issues) in [
+            ("{\n  \"a\": \"^1.0.0\",\n  \"b\": \"^1.0.0\"\n}\n", 0),
+            ("{\n  \"b\": \"^1.0.0\"\n}\n", 1),
+            ("{\n  \"a\": \"^1.0.0\",\n  \"a\": \"^2.0.0\"\n}\n", 1),
+            // the last entry has no trailing comma — removing it would leave
+            // the previous line's comma dangling, so it's refused
+            ("{\n  \"b\": \"^1.0.0\",\n  \"a\": \"^1.0.0\"\n}\n", 1),
+            // a CRLF line ends in `,\r\n` — refused like every other anchor
+            // under CRLF (`.gitattributes` forces LF)
+            (
+                "{\r\n  \"a\": \"^1.0.0\",\r\n  \"b\": \"^1.0.0\"\r\n}\r\n",
+                1,
+            ),
+        ] {
+            fs::write(dir.join("package.json"), content).unwrap();
+            assert_eq!(
+                verify(&dir, &plan).unwrap().len(),
+                expected_issues,
+                "{content:?}"
+            );
+        }
+        fs::write(
+            dir.join("package.json"),
+            "{\n  \"a\": \"^1.0.0\",\n  \"b\": \"^1.0.0\"\n}\n",
+        )
+        .unwrap();
+        crate::apply::apply(&dir, &plan).unwrap();
+        assert_eq!(
+            fs::read_to_string(dir.join("package.json")).unwrap(),
+            "{\n  \"b\": \"^1.0.0\"\n}\n"
+        );
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn create_file_conflicts_are_not_drift() {
+        let dir = std::env::temp_dir().join(format!(
+            "fuz_template_molt_test_create_file_{}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&dir).unwrap();
+        let plan = [Action::CreateFile {
+            path: PathBuf::from("example.ts"),
+            content: String::new(),
+            label: "create".to_owned(),
+        }];
+        assert!(conflicts(&dir, &plan).is_empty());
+        fs::write(dir.join("example.ts"), "").unwrap();
+        assert_eq!(conflicts(&dir, &plan).len(), 1);
+        assert!(verify(&dir, &plan).unwrap().is_empty());
+        fs::remove_dir_all(&dir).unwrap();
     }
 }

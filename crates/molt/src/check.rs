@@ -7,8 +7,23 @@ use crate::anchors;
 use crate::config::MoltConfig;
 use crate::error::CliError;
 use crate::features;
-use crate::plan::{build_plan, verify};
+use crate::plan::{build_plan, conflicts, verify};
 use crate::templates;
+
+/// What `check_all` found, split by remedy.
+#[derive(Debug, Default)]
+pub struct CheckIssues {
+    /// Anchors or embedded templates the template drifted from.
+    pub drift: Vec<String>,
+    /// Template files in the way of files molt creates.
+    pub conflicts: Vec<String>,
+}
+
+impl CheckIssues {
+    pub const fn is_empty(&self) -> bool {
+        self.drift.is_empty() && self.conflicts.is_empty()
+    }
+}
 
 /// Runs `molt check`: verifies every anchor and embedded-template invariant
 /// against the tree at `root`.
@@ -16,27 +31,42 @@ pub fn run(root: &Path) -> Result<ExitCode, CliError> {
     let issues = check_all(root)?;
     if issues.is_empty() {
         println!("molt check passed: all anchors and embedded templates match");
-        Ok(ExitCode::SUCCESS)
-    } else {
+        return Ok(ExitCode::SUCCESS);
+    }
+    if !issues.drift.is_empty() {
         eprintln!(
-            "molt check failed — the template drifted from molt's anchors or embedded templates:"
+            "molt check failed \u{2014} the template drifted from molt's anchors or embedded templates:"
         );
-        for issue in &issues {
+        for issue in &issues.drift {
             eprintln!("  {issue}");
         }
-        eprintln!("(update crates/molt/src/anchors.rs or templates/ in the same change)");
-        // drift is caller-must-fix, same dialect as `CliError::Drift`
-        Ok(ExitCode::from(2))
+        eprintln!(
+            "(update the anchors in crates/molt/src/anchors.rs and src/lib/molt.ts, and the shared templates in crates/molt/templates/, in the same change)"
+        );
     }
+    if !issues.conflicts.is_empty() {
+        eprintln!(
+            "molt check failed \u{2014} template files are in the way of files molt creates:"
+        );
+        for issue in &issues.conflicts {
+            eprintln!("  {issue}");
+        }
+        eprintln!("(molt creates these on eject \u{2014} remove or rename them in the template)");
+    }
+    // both are caller-must-fix, same dialect as `CliError::Drift`
+    Ok(ExitCode::from(2))
 }
 
 /// Verifies the plans for both sample configs, covering every anchor molt can
 /// touch (each feature exercised kept in one config and stripped in the other),
 /// plus the embedded-template invariants that anchors alone can't see.
-pub fn check_all(root: &Path) -> Result<Vec<String>, CliError> {
+pub fn check_all(root: &Path) -> Result<CheckIssues, CliError> {
     let mut issues = Vec::new();
+    let mut conflict_issues = Vec::new();
     for config in sample_configs() {
-        issues.extend(verify(root, &build_plan(&config))?);
+        let plan = build_plan(&config);
+        issues.extend(verify(root, &plan)?);
+        conflict_issues.extend(conflicts(root, &plan));
     }
     // the embedded workspace template must stay byte-identical to the live
     // root Cargo.toml apart from the members and license lines — otherwise
@@ -62,7 +92,12 @@ pub fn check_all(root: &Path) -> Result<Vec<String>, CliError> {
     }
     issues.sort();
     issues.dedup();
-    Ok(issues)
+    conflict_issues.sort();
+    conflict_issues.dedup();
+    Ok(CheckIssues {
+        drift: issues,
+        conflicts: conflict_issues,
+    })
 }
 
 /// Two configs that together exercise every plan branch: one keeps every
@@ -109,7 +144,7 @@ mod tests {
         assert!(
             issues.is_empty(),
             "template drifted from molt's anchors:\n{}",
-            issues.join("\n")
+            [issues.drift, issues.conflicts].concat().join("\n")
         );
     }
 }
