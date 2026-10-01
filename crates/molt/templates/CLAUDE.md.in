@@ -15,9 +15,6 @@ gro deploy    # build, commit, and push to deploy branch
 gro sync      # regenerate files and run svelte-kit sync
 ```
 
-IMPORTANT for AI agents: Do NOT run `gro dev` — the developer manages the
-dev server.
-
 ## Architecture
 
 - `src/routes/` — SvelteKit routes; `+layout.ts` exports `prerender = true`

@@ -63,7 +63,7 @@ Then transform it into your own project with molt (see below):
 npm run molt # or `cargo molt`
 ```
 
-**Files molt customizes (or do it by hand):**
+**Files molt customizes** (the checklist for doing it by hand):
 
 - `package.json` - name, description, homepage, repository, glyph/logo fields
 - `src/routes/+layout.svelte` - `<title>`, template logo
@@ -88,9 +88,9 @@ until you run `npm i`.
 molt is a one-shot wizard that personalizes the clone and then deletes
 itself (like create-react-app's eject, or a spider shedding its skin). It
 ships as **twin implementations** at full behavior parity — same flags, same
-wizard, byte-identical output — so ejecting never requires a toolchain you
-don't have: `src/lib/molt.ts` (run via `npm run molt`) and the `molt` crate
-(run via the cargo alias in `.cargo/config.toml`).
+wizard, byte-identical output — so either toolchain suffices for ejecting:
+`src/lib/molt.ts` (run via `npm run molt`) and the `molt` crate (run via the
+cargo alias in `.cargo/config.toml`).
 
 ```bash
 npm run molt           # interactive wizard: prompts, prints the plan, confirms
@@ -106,10 +106,10 @@ Key behaviors:
   overrides dirty, nothing overrides no-git); an applied plan is undone with
   `git reset --hard && git clean -fd` (the tree was clean, so `git clean`
   removes only files molt created).
-  Applying to a dirty tree (only reachable via `--force`) always demands the
-  dirty-specific in-the-moment confirmation — on the `--wetrun` path and the
-  wizard path alike; `--wetrun` alone never skips it, and without a terminal
-  the dirty apply is refused (exit 2). A terminal always confirms before
+  Applying to a dirty tree (only reachable via `--force`) always demands a
+  dirty-specific confirmation — on the `--wetrun` path and the wizard path
+  alike; `--wetrun` alone never skips it, and without a terminal the dirty
+  apply is refused (exit 2). A terminal always confirms before
   applying, even with `--wetrun` — the only ungated write path is `--wetrun`
   on a clean tree without a terminal.
 - **Plan-then-apply**: every file edit is anchored on exact current content;
@@ -135,12 +135,11 @@ Key behaviors:
   prompt whose answer explicit flags already force (`--keep cli` forces the
   workspace, `--strip cli` forces stripping rust) is skipped with a note.
   `.cargo/` (which holds only the `cargo molt` alias) and the MIT `LICENSE`
-  - `license` fields are deleted unconditionally — the license is fuz.dev's,
-    not the new project's, so keeping it is never right (same reasoning as the
-    personalized github-extras). The registry lives in
-    `crates/molt/src/features.rs` and its TS twin in `molt.ts` — new features
-    are one entry + a plan fragment in each twin (the check sample configs
-    derive from the registry).
+  + `license` fields are deleted unconditionally — the license is fuz.dev's,
+  not the new project's (the personalized github-extras follow the same
+  reasoning). The registry lives in `crates/molt/src/features.rs` and its
+  TS twin in `molt.ts` — new features are one entry + a plan fragment in
+  each twin (the check sample configs derive from the registry).
 - **Identity fields**: name (required), npm name, description, domain,
   repo url — derived from the git origin when it isn't the template's
   (compared case-insensitively). Given or derived, it's normalized to a web
@@ -259,8 +258,8 @@ Component library metadata (modules, declarations, props, dependencies) is
 provided at runtime by the `svelte-docinfo` Vite plugin via the
 `virtual:svelte-docinfo` module. `src/routes/library.ts` combines it with
 `package.json` through `library_json_from_modules`, and `docs/+layout.svelte`
-sets the `library_context` (only where the docs need it — the root layout sets
-just the lighter `site_context`), powering auto-generated API docs at
+sets the `library_context` only where the docs need it (the root layout sets
+just the lighter `site_context`), powering the auto-generated API docs at
 `/docs/api/`.
 
 ### CSS utility classes

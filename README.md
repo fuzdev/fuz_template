@@ -13,7 +13,7 @@
 - [fuz_css](https://github.com/fuzdev/fuz_css): semantic-first CSS framework and design system
 - [fuz_ui](https://github.com/fuzdev/fuz_ui):
   - Svelte UI library - [ui.fuz.dev](https://ui.fuz.dev/)
-  - is optional, to remove, `npm uninstall @fuzdev/fuz_ui` and delete the imports
+  - optional: `npm uninstall @fuzdev/fuz_ui` and delete the imports to remove it
 - [Gro](https://github.com/fuzdev/gro):
   - extends [SvelteKit](https://github.com/sveltejs/kit) and
     [Vite](https://github.com/vitejs/vite)
@@ -25,7 +25,7 @@
   - linting with [ESLint](https://github.com/eslint/eslint)
     and [`@ryanatkn/eslint-config`](https://github.com/ryanatkn/eslint-config)
   - also has [a task system](https://github.com/fuzdev/gro/blob/main/src/docs/task.md)
-    with a bunch of [builtins](https://github.com/fuzdev/gro/blob/main/src/docs/tasks.md),
+    with [builtins](https://github.com/fuzdev/gro/blob/main/src/docs/tasks.md),
     [codegen](https://github.com/fuzdev/gro/blob/main/src/docs/gen.md),
     and [other things](https://github.com/fuzdev/gro/tree/main/src/lib/docs)
 - optional [utilities library `@fuzdev/fuz_util`](https://github.com/fuzdev/fuz_util)
@@ -67,8 +67,7 @@ with no further configuration.
 To learn how to swap it out for another deployment target, see
 [the SvelteKit adapter docs](https://svelte.dev/docs/kit/adapters).
 
-To make it your own, run the molt wizard (requires a clean git tree — commit
-or stash first):
+To make it your own, run the molt wizard (it requires a clean git tree):
 
 ```bash
 npm run molt # or `cargo molt` — twin implementations, identical results
@@ -77,7 +76,7 @@ npm run molt # or `cargo molt` — twin implementations, identical results
 It renames the project, strips the demo components, and deletes itself — see
 [molt](#molt) below.
 
-Prefer to do it by hand? Change `@fuzdev/fuz_template`
+To do the same by hand, change `@fuzdev/fuz_template`
 and `template.fuz.dev` to your project name in the following files:
 
 - [`package.json`](package.json) — also remove or replace the `glyph`,
@@ -88,7 +87,7 @@ and `template.fuz.dev` to your project name in the following files:
 - update or delete [`static/CNAME`](static/CNAME),
   ./.github/FUNDING.yml, and ./.github/ISSUE_TEMPLATE/
 
-And to remove the Rust workspace, delete `Cargo.toml`, `Cargo.lock`, `crates/`,
+To remove the Rust workspace, delete `Cargo.toml`, `Cargo.lock`, `crates/`,
 `.cargo/`, `rust-toolchain.toml`, `clippy.toml`, and the `rust` job in
 [`.github/workflows/check.yml`](.github/workflows/check.yml).
 
@@ -107,11 +106,11 @@ project, replace the copyright holder with your own; or swap in
 
 ## molt
 
-molt is a simple wizard that transforms this clone into your own project,
-then deletes itself. It ships as twin implementations at full behavior
-parity — same flags, same prompts, byte-identical results — so you pick by
-toolchain: `src/lib/molt.ts` runs on the Node you already have, and the
-`molt` crate comes with the template's Rust workspace.
+molt is a wizard that transforms this clone into your own project, then
+deletes itself. It ships as twin implementations at full behavior parity —
+same flags, same prompts, byte-identical results — so either toolchain
+suffices: `src/lib/molt.ts` runs on Node, and the `molt` crate comes with
+the template's Rust workspace.
 
 ```bash
 npm run molt          # interactive wizard: prompts, prints the full plan, confirms
@@ -120,35 +119,38 @@ cargo molt            # the Rust twin — same flags and behavior
 cargo molt check
 ```
 
-What it does, driven by your answers:
+The plan, from the prompts or the equivalent flags:
 
 - renames the project everywhere (`package.json`, page titles, headings)
 - updates or removes `static/CNAME`, `homepage`, and `repository`
 - deletes the demo components and writes a minimal starting page (plus a
   starter `src/lib/example.ts` when docs are kept — the API docs need a
   module to document)
-- regenerates `README.md` and `CLAUDE.md` for your project
-- deletes the template's MIT `LICENSE` and `license` fields — your project
+- regenerates `README.md` and `CLAUDE.md` for the new project
+- deletes the template's MIT `LICENSE` and `license` fields — the new project
   chooses its own license
-- keeps or strips each optional feature — `rust` (the whole workspace),
-  `cli` (the starter crate at [`crates/app_cli`](crates/app_cli), renamed to
-  your project name), `docs` (the docs system), and `github-extras`
-  (funding + issue templates, personalized when kept) — via prompts or
-  `--keep`/`--strip` lists (e.g. `--strip rust` or `--keep github-extras --strip docs`);
-  stripping `cli` alone is rejected — a kept workspace needs a crate, and
-  keeping `docs` needs a repository url (the API docs link to source), from
-  `--repo` or a git origin that isn't the template's — the wizard asks when
-  there's none; `--repo` takes an https, http, or ssh git url (normalized to its
-  web url, with any credentials stripped) and refuses anything else with
-  exit 2
+- keeps or strips each optional feature, by prompt or by `--keep`/`--strip`
+  lists (e.g. `--strip rust` or `--keep github-extras --strip docs`):
+  - `rust` — the whole workspace
+  - `cli` — the starter crate at [`crates/app_cli`](crates/app_cli), renamed
+    to the project name; it rides with `rust`, and stripping `cli` alone is
+    rejected because a kept workspace needs a crate
+  - `docs` — the docs system; keeping it needs a repository url (the API
+    docs link to source) from `--repo` or a git origin that isn't the
+    template's, and the wizard asks when there's none
+  - `github-extras` — funding + issue templates, personalized when kept;
+    stripped by default
 - deletes both of its own implementations (the crate, the script, and its tests)
+
+`--repo` takes an https, http, or ssh git url, normalizes it to its web url
+with any credentials stripped, and refuses anything else with exit 2.
 
 It refuses to run without a clean git tree, so an applied plan can be undone
 with `git reset --hard && git clean -fd` (the tree was clean, so `git clean`
-removes only files molt created). `--force` lets a dirty tree through for _planning_,
-but applying to a dirty tree always requires an interactive confirmation —
-without a terminal it refuses (exit 2), because there'd be no clean undo
-point. Run with flags instead of prompts for non-interactive use
+removes only files molt created). `--force` lets a dirty tree through for
+_planning_, but applying to a dirty tree always requires an interactive
+confirmation — without a terminal it refuses (exit 2), since there is no
+clean undo point. Flags replace the prompts for non-interactive use
 (`npm run molt -- --help` or `cargo molt --help`); in that mode nothing is
 written without `--wetrun`. A terminal always confirms before applying, so
 the only ungated write path is `--wetrun` on a clean tree without a terminal.
