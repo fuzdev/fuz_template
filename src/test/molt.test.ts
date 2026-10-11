@@ -177,7 +177,7 @@ describe('apply', () => {
 
 		// docs kept: the svelte-docinfo tooling stays
 		assert.ok(package_json.includes('svelte-docinfo'));
-		assert.ok(read(dir, 'vite.config.ts').includes('svelte_docinfo()'));
+		assert.ok(read(dir, 'vite.config.ts').includes("svelte_docinfo({ onDuplicates: 'throw' })"));
 
 		const workspace = read(dir, 'Cargo.toml');
 		assert.ok(workspace.includes('members = ["crates/sample_app"]'));

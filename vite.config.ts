@@ -29,7 +29,7 @@ export default defineConfig({
 			// 	}),
 			// },
 		}),
-		svelte_docinfo(),
+		svelte_docinfo({ onDuplicates: 'throw' }),
 		vite_plugin_fuz_css(),
 		vite_plugin_pkg_json()
 	],
