@@ -25,7 +25,7 @@ pub const LAYOUT_SITE_STATE: &str = "\t// `glyph` and `repo_url` derive from `pk
 pub const LAYOUT_SITE_STATE_REPLACEMENT: &str = "\t// `glyph` and `repo_url` derive from `pkg_json`.\n\tsite_context.set(new SiteState({ pkg_json }));";
 pub const LAYOUT_TITLE: &str = "<title>@fuzdev/fuz_template</title>";
 
-pub const PAGE_MREOWS_IMPORT: &str = "import Mreows, { mreow_items } from '$lib/Mreows.svelte';";
+pub const PAGE_MREOWS_IMPORT: &str = "import Mreows, { mreow_items } from '#lib/Mreows.svelte';";
 pub const H1_FUZ_TEMPLATE: &str = "<h1 class=\"mt_xl2\">fuz_template</h1>";
 
 // the docs system's tooling, stripped with the `docs` feature
@@ -36,7 +36,7 @@ pub const PACKAGE_JSON_SVELTE_DOCINFO: &str = "    \"svelte-docinfo\": \"";
 /// isn't the last entry, whose removal would strand the previous line's comma.
 pub const PACKAGE_JSON_SVELTE_DOCINFO_SUFFIX: &str = "\",\n";
 pub const VITE_DOCINFO_IMPORT: &str = "import svelte_docinfo from 'svelte-docinfo/vite.js';\n";
-pub const VITE_DOCINFO_PLUGIN: &str = "svelte_docinfo(), ";
+pub const VITE_DOCINFO_PLUGIN: &str = "\t\tsvelte_docinfo(),\n";
 pub const APP_D_TS_DOCINFO: &str = "// Registers ambient types for the `virtual:svelte-docinfo` module (Vite plugin).\n// eslint-disable-next-line @typescript-eslint/triple-slash-reference\n/// <reference types=\"svelte-docinfo/virtual-svelte-docinfo.js\" />\n";
 
 // the github extras, personalized when kept

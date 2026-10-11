@@ -66,6 +66,8 @@ so it can [deploy](https://github.com/fuzdev/gro/blob/main/src/docs/deploy.md)
 with no further configuration.
 To learn how to swap it out for another deployment target, see
 [the SvelteKit adapter docs](https://svelte.dev/docs/kit/adapters).
+SvelteKit's config lives in [`vite.config.ts`](vite.config.ts),
+passed to the `sveltekit({...})` plugin.
 
 To make it your own, run the molt wizard (it requires a clean git tree):
 

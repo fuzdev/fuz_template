@@ -52,7 +52,7 @@ import {
 	validate_name,
 	validate_npm_name,
 	verify
-} from '../lib/molt.ts';
+} from '#lib/molt.ts';
 
 const repo_root = fileURLToPath(new URL('../..', import.meta.url));
 

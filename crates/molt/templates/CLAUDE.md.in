@@ -19,7 +19,9 @@ gro sync      # regenerate files and run svelte-kit sync
 
 - `src/routes/` — SvelteKit routes; `+layout.ts` exports `prerender = true`
   for full static generation
-- `src/lib/` — library code (components, utilities)
+- `src/lib/` — library code (components, utilities); it imports relatively,
+  and everything else imports it via the `#lib/*` subpath import
+- `vite.config.ts` — Vite and SvelteKit config (the `sveltekit({...})` options)
 __DOCS_BULLET__- fuz_css utility classes are generated on demand by the
   `vite_plugin_fuz_css` Vite plugin via the `virtual:fuz.css` module
 - Dark/light theme detection runs in `src/app.html` before render to prevent

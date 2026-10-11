@@ -195,6 +195,7 @@ argh with an explicit `from_args` so usage errors exit `2`.
 
 ```
 Cargo.toml                 # Rust workspace (lints, profile, deps)
+vite.config.ts             # Vite + SvelteKit config (`sveltekit({...})` options)
 crates/
 ├── app_cli/               # starter CLI crate — molt renames it to yours
 └── molt/                  # molt's Rust twin — the self-eject CLI (deletes itself)
@@ -238,9 +239,18 @@ Replace these with your actual components.
 
 - `+layout.ts` exports `prerender = true` and `ssr = true` for full static
   generation
-- `svelte.config.js` enables runes mode and includes a commented-out example
+- All SvelteKit and Svelte config lives in `vite.config.ts`, passed flat to
+  the `sveltekit({...})` plugin (there is no `svelte.config.js`): the
+  mdz/fuz_code preprocessors, runes mode, the inspector, the static adapter,
+  root-absolute `paths`, the git-hash `version`, and a commented-out example
   CSP config using `create_csp_directives()` from fuz_ui
 - Uses `@sveltejs/adapter-static` for static output
+- `tsconfig.json` extends `$app/tsconfig` (written by `svelte-kit sync`)
+- Imports: code in `src/lib/` imports relatively; everything else
+  (`src/routes/`, `src/test/`) uses the `#lib/*` and `#routes/*` subpath
+  imports declared in `package.json` (`#lib/Mreows.svelte`,
+  `#routes/library.ts`); SvelteKit's runtime modules come from `$app/*`
+  (`$app/paths`, `$app/env`)
 
 ### Theme detection
 
