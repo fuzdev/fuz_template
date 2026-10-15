@@ -474,7 +474,7 @@ fn print_next_steps(config: &MoltConfig, clean: bool) {
         "\nstatic/logo.svg and static/favicon.png still carry the template's spider — replace them when ready."
     );
     println!(
-        "molt deleted the template's MIT LICENSE and license fields — choose your own: https://choosealicense.com/"
+        "molt deleted the template's 0BSD LICENSE and license fields — choose your own: https://choosealicense.com/"
     );
     if config.keeps(features::GITHUB_EXTRAS) {
         if config.repo_url.is_some() {

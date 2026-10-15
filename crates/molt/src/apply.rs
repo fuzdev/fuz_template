@@ -158,7 +158,7 @@ mod tests {
         assert!(package_json.contains("\"homepage\": \"https://sample.example.com/\""));
         assert_eq!(read(&dir, "static/CNAME"), "sample.example.com\n");
 
-        // the template's MIT license never ships in a molted project
+        // the template's 0BSD license never ships in a molted project
         assert!(!dir.join("LICENSE").exists());
         assert!(!package_json.contains("\"license\""));
 

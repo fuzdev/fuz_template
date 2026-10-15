@@ -554,7 +554,7 @@ const PACKAGE_JSON_DESCRIPTION =
 const PACKAGE_JSON_GLYPH = '  "glyph": "❄",\n';
 const PACKAGE_JSON_LOGO = '  "logo": "logo.svg",\n';
 const PACKAGE_JSON_LOGO_ALT = '  "logo_alt": "a friendly pixelated spider facing you",\n';
-const PACKAGE_JSON_LICENSE = '  "license": "MIT",\n';
+const PACKAGE_JSON_LICENSE = '  "license": "0BSD",\n';
 const PACKAGE_JSON_HOMEPAGE = '  "homepage": "https://template.fuz.dev/",\n';
 const PACKAGE_JSON_REPOSITORY = '  "repository": "https://github.com/fuzdev/fuz_template",\n';
 // The TS twin ejector's npm script — removed on eject along with the script
@@ -602,7 +602,7 @@ const CNAME_CONTENT = 'template.fuz.dev';
 const WORKSPACE_MEMBERS = 'members = ["crates/app_cli", "crates/molt"]';
 // The workspace manifest's license line — stripped on eject along with the
 // `LICENSE` file (a molted project chooses its own license).
-const WORKSPACE_LICENSE = 'license = "MIT"\n';
+const WORKSPACE_LICENSE = 'license = "0BSD"\n';
 
 // The starter CLI crate's name — molt renames every occurrence (and the
 // crate directory) to the chosen project name.
@@ -801,7 +801,7 @@ export const build_plan = (config: MoltConfig, templates: Templates): Array<Acti
 		plan.push(replace_once('package.json', anchor, '', label));
 	}
 
-	// the template's MIT license is fuz.dev's, not the new project's
+	// the template's 0BSD license is fuz.dev's, not the new project's
 	plan.push({ kind: 'delete_file', path: 'LICENSE' });
 
 	// the TS twin ejector (`npm run molt`) is template machinery, deleted on
@@ -1908,7 +1908,7 @@ const print_next_steps = (config: MoltConfig, clean: boolean): void => {
 		"\nstatic/logo.svg and static/favicon.png still carry the template's spider — replace them when ready."
 	);
 	console.log(
-		"molt deleted the template's MIT LICENSE and license fields — choose your own: https://choosealicense.com/"
+		"molt deleted the template's 0BSD LICENSE and license fields — choose your own: https://choosealicense.com/"
 	);
 	if (keeps(config, GITHUB_EXTRAS)) {
 		if (config.repo_url !== null) {

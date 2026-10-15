@@ -5,7 +5,7 @@ members = ["crates/app_cli", "crates/molt"]
 [workspace.package]
 version = "0.0.1"
 edition = "2024"
-license = "MIT"
+license = "0BSD"
 publish = false
 
 [workspace.dependencies]

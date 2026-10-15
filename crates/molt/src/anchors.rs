@@ -11,7 +11,7 @@ pub const PACKAGE_JSON_GLYPH: &str = "  \"glyph\": \"\u{2744}\",\n";
 pub const PACKAGE_JSON_LOGO: &str = "  \"logo\": \"logo.svg\",\n";
 pub const PACKAGE_JSON_LOGO_ALT: &str =
     "  \"logo_alt\": \"a friendly pixelated spider facing you\",\n";
-pub const PACKAGE_JSON_LICENSE: &str = "  \"license\": \"MIT\",\n";
+pub const PACKAGE_JSON_LICENSE: &str = "  \"license\": \"0BSD\",\n";
 pub const PACKAGE_JSON_HOMEPAGE: &str = "  \"homepage\": \"https://template.fuz.dev/\",\n";
 pub const PACKAGE_JSON_REPOSITORY: &str =
     "  \"repository\": \"https://github.com/fuzdev/fuz_template\",\n";
@@ -57,7 +57,7 @@ pub const CNAME_CONTENT: &str = "template.fuz.dev";
 pub const WORKSPACE_MEMBERS: &str = "members = [\"crates/app_cli\", \"crates/molt\"]";
 /// The workspace manifest's license line — stripped on eject along with the
 /// `LICENSE` file (a molted project chooses its own license).
-pub const WORKSPACE_LICENSE: &str = "license = \"MIT\"\n";
+pub const WORKSPACE_LICENSE: &str = "license = \"0BSD\"\n";
 
 /// The starter CLI crate's name — molt renames every occurrence (and the
 /// crate directory) to the chosen project name.

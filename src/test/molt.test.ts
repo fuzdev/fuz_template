@@ -128,7 +128,7 @@ describe('apply', () => {
 		assert.ok(package_json.includes('"homepage": "https://sample.example.com/"'));
 		assert.strictEqual(read(dir, 'static/CNAME'), 'sample.example.com\n');
 
-		// the template's MIT license never ships in a molted project
+		// the template's 0BSD license never ships in a molted project
 		assert.ok(!existsSync(join(dir, 'LICENSE')));
 		assert.ok(!package_json.includes('"license"'));
 

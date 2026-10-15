@@ -150,7 +150,7 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
         plan.push(replace_once("package.json", anchor, String::new(), label));
     }
 
-    // the template's MIT license is fuz.dev's, not the new project's
+    // the template's 0BSD license is fuz.dev's, not the new project's
     plan.push(Action::DeleteFile {
         path: PathBuf::from("LICENSE"),
     });

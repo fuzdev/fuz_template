@@ -73,7 +73,7 @@ npm run molt # or `cargo molt`
   components); with docs kept, a starter `src/lib/example.ts` replaces them
   (the API docs prerender a page per module, so they need at least one)
 - `.gitattributes` and `.github/workflows/check.yml` - molt's notes removed
-- `LICENSE` and the `license` fields - deleted (the MIT license is the
+- `LICENSE` and the `license` fields - deleted (the 0BSD license is the
   template's; your project chooses its own)
 - `static/CNAME` - update or delete for your domain
 - `.github/FUNDING.yml` and `.github/ISSUE_TEMPLATE/` - update or delete
@@ -134,7 +134,7 @@ Key behaviors:
   keeping `rust` is rejected (cargo can't load an empty workspace), and a
   prompt whose answer explicit flags already force (`--keep cli` forces the
   workspace, `--strip cli` forces stripping rust) is skipped with a note.
-  `.cargo/` (which holds only the `cargo molt` alias) and the MIT `LICENSE`
+  `.cargo/` (which holds only the `cargo molt` alias) and the 0BSD `LICENSE`
   + `license` fields are deleted unconditionally — the license is fuz.dev's,
   not the new project's (the personalized github-extras follow the same
   reasoning). The registry lives in `crates/molt/src/features.rs` and its

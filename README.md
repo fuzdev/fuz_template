@@ -101,8 +101,8 @@ To remove the docs system, delete `src/routes/docs/` and
 
 Then run `npm i` to update `package-lock.json`.
 
-The template is MIT-licensed ([`LICENSE`](LICENSE), plus `license` fields in
-`package.json` and `Cargo.toml`), copyright fuz.dev — to keep MIT for your
+The template is 0BSD-licensed ([`LICENSE`](LICENSE), plus `license` fields in
+`package.json` and `Cargo.toml`), copyright fuz.dev — to keep 0BSD for your
 project, replace the copyright holder with your own; or swap in
 [another license](https://choosealicense.com/).
 
@@ -129,7 +129,7 @@ The plan, from the prompts or the equivalent flags:
   starter `src/lib/example.ts` when docs are kept — the API docs need a
   module to document)
 - regenerates `README.md` and `CLAUDE.md` for the new project
-- deletes the template's MIT `LICENSE` and `license` fields — the new project
+- deletes the template's 0BSD `LICENSE` and `license` fields — the new project
   chooses its own license
 - keeps or strips each optional feature, by prompt or by `--keep`/`--strip`
   lists (e.g. `--strip rust` or `--keep github-extras --strip docs`):
