@@ -206,7 +206,6 @@ gro deploy
 [Fuz](https://github.com/fuzdev/fuz_ui) ∙
 [Gro](https://github.com/fuzdev/gro) ∙
 [@fuzdev/fuz_util](https://github.com/fuzdev/fuz_util) ∙
-[Zod](https://github.com/colinhacks/zod) ∙
 & [more](package.json)
 
 ## [🐦](https://wikipedia.org/wiki/Free_and_open-source_software)
