@@ -36,7 +36,7 @@ pub const PACKAGE_JSON_SVELTE_DOCINFO: &str = "    \"svelte-docinfo\": \"";
 /// isn't the last entry, whose removal would strand the previous line's comma.
 pub const PACKAGE_JSON_SVELTE_DOCINFO_SUFFIX: &str = "\",\n";
 pub const VITE_DOCINFO_IMPORT: &str = "import svelte_docinfo from 'svelte-docinfo/vite.js';\n";
-pub const VITE_DOCINFO_PLUGIN: &str = "\t\tsvelte_docinfo(),\n";
+pub const VITE_DOCINFO_PLUGIN: &str = "\t\tsvelte_docinfo({ onDuplicates: 'throw' }),\n";
 pub const APP_D_TS_DOCINFO: &str = "// Registers ambient types for the `virtual:svelte-docinfo` module (Vite plugin).\n// eslint-disable-next-line @typescript-eslint/triple-slash-reference\n/// <reference types=\"svelte-docinfo/virtual-svelte-docinfo.js\" />\n";
 
 // the github extras, personalized when kept

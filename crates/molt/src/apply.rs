@@ -211,7 +211,7 @@ mod tests {
 
         // docs kept: the svelte-docinfo tooling stays
         assert!(package_json.contains("svelte-docinfo"));
-        assert!(read(&dir, "vite.config.ts").contains("svelte_docinfo()"));
+        assert!(read(&dir, "vite.config.ts").contains("svelte_docinfo({ onDuplicates: 'throw' })"));
 
         let workspace = read(&dir, "Cargo.toml");
         assert!(workspace.contains("members = [\"crates/sample_app\"]"));
