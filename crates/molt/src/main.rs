@@ -461,7 +461,9 @@ fn print_next_steps(config: &MoltConfig, clean: bool) {
     println!("  npm i        # refresh package-lock.json for the new name");
     println!("  gro check    # typecheck, test, lint, format");
     if config.keeps(features::RUST) {
-        println!("  cargo check  # refresh Cargo.lock for your crate");
+        println!(
+            "  cargo check  # refresh Cargo.lock for your crate (CI's cargo steps run --locked)"
+        );
     }
     println!(
         "  git add -A && git commit -m \"chore: molt fuz_template into {}\"",

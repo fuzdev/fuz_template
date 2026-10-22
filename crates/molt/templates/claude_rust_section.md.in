@@ -11,6 +11,7 @@ side — run cargo directly:
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --check
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
 ```
 
 CI runs these in the `rust` job of `.github/workflows/check.yml`. Errors

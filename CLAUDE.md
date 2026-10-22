@@ -29,6 +29,10 @@ gro sync      # regenerate files and run svelte-kit sync
 - fuz_ui (@fuzdev/fuz_ui) - UI components, theming, docs system
 - fuz_util (@fuzdev/fuz_util) - utility functions
 - fuz_code (@fuzdev/fuz_code) - syntax highlighting
+- fuz_schema (@fuzdev/fuz_schema) - Standard Schema library (peer dep of fuz_util, fuz_css, and gro)
+- mdz (@fuzdev/mdz) - minimal markdown dialect and its Svelte preprocessor
+- blake3-wasm (@fuzdev/blake3-wasm) - BLAKE3 hashing compiled to WASM (peer dep of fuz_util and gro)
+- svelte-docinfo - static analysis behind the API docs (Vite plugin)
 - Gro (@fuzdev/gro) - build system and task runner
 
 ## Scope
@@ -181,6 +185,7 @@ directly:
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --check
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
 ```
 
 CI runs these in the `rust` job of `.github/workflows/check.yml`. Errors
@@ -202,6 +207,7 @@ crates/
     ├── src/               # plan/verify/apply, wizard, features, anchors
     └── templates/         # output templates (*.in), shared by both twins
 src/
+├── app.d.ts               # ambient types for the virtual modules
 ├── app.html               # HTML entry with theme detection
 ├── lib/                   # your library code
 │   ├── Mreows.svelte      # example component (replace me)
@@ -215,6 +221,7 @@ src/
     ├── +layout.ts         # prerender: true, ssr: true
     ├── +page.svelte       # home page
     ├── style.css          # custom global styles
+    ├── library.ts         # library metadata from svelte-docinfo + package.json
     ├── about/+page.svelte
     └── docs/              # documentation pages
         ├── +layout.svelte # wraps docs in Docs component
@@ -222,6 +229,7 @@ src/
         ├── tomes.ts       # documentation structure
         ├── library/       # library details page
         └── api/           # auto-generated API docs
+static/                    # copied as-is: logo, favicon, robots.txt, CNAME, .nojekyll
 ```
 
 ### Example components (replace these)
@@ -292,7 +300,8 @@ Uses fuz_ui's tome system:
 
 Uses contexts from fuz_ui:
 
-- `library_context` - provides `Library` class for docs
+- `site_context` - provides `SiteState` (set in the root layout)
+- `library_context` - provides `Library` class for docs (set in the docs layout)
 - `tomes_context` - provides documentation structure
 - Theme context via `ThemeRoot` component wrapper
 

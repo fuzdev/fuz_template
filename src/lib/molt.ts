@@ -631,10 +631,21 @@ const CI_RUST_JOB = `
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
-      # rustup auto-installs the toolchain pinned in rust-toolchain.toml
+      # The toolchain is pinned in rust-toolchain.toml, not stable: the
+      # workspace runs clippy nursery lints at warn and this job denies warnings,
+      # so a floating toolchain would fail CI whenever a new Rust release adds
+      # a nursery lint. Bump the file deliberately. The runner's preinstalled
+      # rustup installs that toolchain and its components from the file.
+      - name: Install Rust
+        run: |
+          rustup toolchain install --no-self-update
+          rustup show active-toolchain
       - run: cargo fmt --check
-      - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo test --workspace
+      - run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - run: cargo test --locked --workspace
+      - run: cargo doc --locked --workspace --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
 `;
 
 /* templates — twin of `crates/molt/src/templates.rs` */
@@ -1898,7 +1909,9 @@ const print_next_steps = (config: MoltConfig, clean: boolean): void => {
 	console.log('  npm i        # refresh package-lock.json for the new name');
 	console.log('  gro check    # typecheck, test, lint, format');
 	if (keeps(config, RUST)) {
-		console.log('  cargo check  # refresh Cargo.lock for your crate');
+		console.log(
+			"  cargo check  # refresh Cargo.lock for your crate (CI's cargo steps run --locked)"
+		);
 	}
 	console.log(`  git add -A && git commit -m "chore: molt fuz_template into ${config.name}"`);
 	if (clean) {

@@ -9,4 +9,5 @@ fuz ecosystem's lints and release profile, with the toolchain pinned in
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --check
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
 ```

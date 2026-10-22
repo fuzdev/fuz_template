@@ -19,6 +19,14 @@ trivial_numeric_casts = "warn"
 unused_lifetimes = "warn"
 unused_qualifications = "warn"
 
+[workspace.lints.rustdoc]
+# A doc link is the only machine-checkable claim a doc comment makes, so
+# deny broken links and malformed markup (CI's `cargo doc` step enforces it).
+broken_intra_doc_links = "deny"
+invalid_html_tags = "deny"
+bare_urls = "deny"
+redundant_explicit_links = "deny"
+
 [workspace.lints.clippy]
 # Enable lint groups (priority -1 so individual lints can override)
 all = { level = "warn", priority = -1 }
@@ -27,6 +35,8 @@ nursery = { level = "warn", priority = -1 }
 cargo = { level = "warn", priority = -1 }
 
 # Pedantic overrides
+# Fires only on test asserts; its `assert_eq!(x, [] as [T; 0])` rewrite reads worse
+assert_is_empty = "allow"
 module_name_repetitions = "allow"
 must_use_candidate = "allow"
 similar_names = "allow"
