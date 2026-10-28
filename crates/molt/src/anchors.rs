@@ -10,7 +10,7 @@ pub const PACKAGE_JSON_DESCRIPTION: &str = "  \"description\": \"a web app templ
 pub const PACKAGE_JSON_GLYPH: &str = "  \"glyph\": \"\u{2744}\",\n";
 pub const PACKAGE_JSON_LOGO: &str = "  \"logo\": \"logo.svg\",\n";
 pub const PACKAGE_JSON_LOGO_ALT: &str =
-    "  \"logo_alt\": \"a friendly pixelated spider facing you\",\n";
+    "  \"logo_alt\": \"a friendly orange pixelated spider facing you\",\n";
 pub const PACKAGE_JSON_LICENSE: &str = "  \"license\": \"0BSD\",\n";
 pub const PACKAGE_JSON_HOMEPAGE: &str = "  \"homepage\": \"https://template.fuz.dev/\",\n";
 pub const PACKAGE_JSON_REPOSITORY: &str =

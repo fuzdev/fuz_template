@@ -553,7 +553,7 @@ const PACKAGE_JSON_DESCRIPTION =
 	'  "description": "a web app template with TypeScript + SvelteKit + optional Rust for the fuz-stack",\n';
 const PACKAGE_JSON_GLYPH = '  "glyph": "❄",\n';
 const PACKAGE_JSON_LOGO = '  "logo": "logo.svg",\n';
-const PACKAGE_JSON_LOGO_ALT = '  "logo_alt": "a friendly pixelated spider facing you",\n';
+const PACKAGE_JSON_LOGO_ALT = '  "logo_alt": "a friendly orange pixelated spider facing you",\n';
 const PACKAGE_JSON_LICENSE = '  "license": "0BSD",\n';
 const PACKAGE_JSON_HOMEPAGE = '  "homepage": "https://template.fuz.dev/",\n';
 const PACKAGE_JSON_REPOSITORY = '  "repository": "https://github.com/fuzdev/fuz_template",\n';

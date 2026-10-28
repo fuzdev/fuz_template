@@ -1,6 +1,6 @@
 # @fuzdev/fuz_template ❄
 
-[<img src="/static/logo.svg" alt="a friendly pixelated spider facing you" align="right" width="192" height="192">](https://template.fuz.dev/)
+[<img src="/static/logo.svg" alt="a friendly orange pixelated spider facing you" align="right" width="192" height="192">](https://template.fuz.dev/)
 
 > a web app template with TypeScript + SvelteKit + optional Rust for the fuz-stack
 

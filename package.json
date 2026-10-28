@@ -4,7 +4,7 @@
   "description": "a web app template with TypeScript + SvelteKit + optional Rust for the fuz-stack",
   "glyph": "❄",
   "logo": "logo.svg",
-  "logo_alt": "a friendly pixelated spider facing you",
+  "logo_alt": "a friendly orange pixelated spider facing you",
   "license": "0BSD",
   "private": true,
   "homepage": "https://template.fuz.dev/",
