@@ -1,13 +1,13 @@
 
 ## Rust workspace
 
-The repo doubles as a Rust workspace: root `Cargo.toml` with the fuz
-ecosystem's canonical lints (`unsafe_code = "forbid"`, clippy
-pedantic/nursery at warn) and release profile, crates under `crates/`, and
-the toolchain pinned in `rust-toolchain.toml`. Do not use Gro for the Rust
-side — run cargo directly:
+The root `Cargo.toml` carries the fuz ecosystem's canonical lints
+(`unsafe_code = "forbid"`, clippy pedantic/nursery at warn) and release
+profile, with crates under `crates/` (the starter CLI is `crates/__NAME__`)
+and the toolchain pinned in `rust-toolchain.toml`. Run cargo directly:
 
 ```bash
+cargo run -p __NAME__ -- --help
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --check

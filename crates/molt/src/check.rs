@@ -57,8 +57,8 @@ pub fn run(root: &Path) -> Result<ExitCode, CliError> {
     Ok(ExitCode::from(2))
 }
 
-/// Verifies the plans for both sample configs, covering every anchor molt can
-/// touch (each feature exercised kept in one config and stripped in the other),
+/// Verifies the plans for every sample config, covering every anchor molt can
+/// touch (each feature exercised both kept and stripped),
 /// plus the embedded-template invariants that anchors alone can't see.
 pub fn check_all(root: &Path) -> Result<CheckIssues, CliError> {
     let mut issues = Vec::new();
@@ -100,11 +100,13 @@ pub fn check_all(root: &Path) -> Result<CheckIssues, CliError> {
     })
 }
 
-/// Two configs that together exercise every plan branch: one keeps every
+/// Three configs that together exercise every plan branch: one keeps every
 /// registry feature (derived from `features::FEATURES`, so a new feature is
-/// covered without touching this) and sets every optional value, one strips
-/// every feature and clears the optional values.
-pub fn sample_configs() -> [MoltConfig; 2] {
+/// covered without touching this) and sets every optional value, one keeps
+/// only the `sveltekit` app and clears the optional values, and one keeps only
+/// the Rust workspace — a project needs one of the two, so no sample strips
+/// both.
+pub fn sample_configs() -> [MoltConfig; 3] {
     [
         MoltConfig {
             name: "sample_app".to_owned(),
@@ -121,7 +123,15 @@ pub fn sample_configs() -> [MoltConfig; 2] {
             description: String::new(),
             domain: None,
             repo_url: None,
-            kept: BTreeSet::new(),
+            kept: BTreeSet::from([features::SVELTEKIT]),
+        },
+        MoltConfig {
+            name: "rusty_app".to_owned(),
+            npm_name: "rusty_app".to_owned(),
+            description: "a Rust-only sample".to_owned(),
+            domain: None,
+            repo_url: Some("https://github.com/sample/rusty_app".to_owned()),
+            kept: BTreeSet::from([features::RUST, features::CLI, features::GITHUB_EXTRAS]),
         },
     ]
 }

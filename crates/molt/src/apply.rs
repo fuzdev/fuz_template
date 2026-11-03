@@ -96,6 +96,9 @@ mod tests {
         for file in [
             ".gitattributes",
             "package.json",
+            "package-lock.json",
+            "tsconfig.json",
+            "eslint.config.js",
             "README.md",
             "CLAUDE.md",
             "LICENSE",
@@ -142,7 +145,7 @@ mod tests {
 
     #[test]
     fn apply_keep_rust_sample() {
-        let [config, _] = sample_configs();
+        let [config, _, _] = sample_configs();
         let dir = scratch_dir("keep_rust");
         copy_template(&dir);
 
@@ -187,10 +190,15 @@ mod tests {
         assert!(read(&dir, "src/lib/example.ts").contains("from sample_app"));
         assert!(dir.join("src/routes/library.ts").is_file());
 
-        assert!(read(&dir, "README.md").starts_with("# @sample/sample_app"));
+        let readme = read(&dir, "README.md");
+        assert!(readme.starts_with("# @sample/sample_app"));
+        assert!(readme.contains("## web app"));
+        assert!(readme.contains("cargo run -p sample_app"));
         let claude = read(&dir, "CLAUDE.md");
         assert!(claude.starts_with("# sample_app"));
+        assert!(claude.contains("## Web app"));
         assert!(claude.contains("## Rust workspace"));
+        assert!(claude.contains("crates/sample_app"));
         assert!(claude.contains("src/routes/docs"));
 
         // github-extras kept: personalized, never the template author's links
@@ -207,6 +215,7 @@ mod tests {
         );
         let workflow = read(&dir, ".github/workflows/check.yml");
         assert!(workflow.contains("cargo clippy"));
+        assert!(workflow.contains("npx @fuzdev/gro check"));
         assert!(!workflow.contains("molt"));
 
         // docs kept: the svelte-docinfo tooling stays
@@ -235,7 +244,7 @@ mod tests {
 
     #[test]
     fn apply_strip_rust_sample() {
-        let [_, config] = sample_configs();
+        let [_, config, _] = sample_configs();
         let dir = scratch_dir("strip_rust");
         copy_template(&dir);
 
@@ -266,6 +275,7 @@ mod tests {
         let workflow = read(&dir, ".github/workflows/check.yml");
         assert!(!workflow.contains("cargo"));
         assert!(workflow.contains("npx @fuzdev/gro check"));
+        assert!(!workflow.contains("molt"));
 
         // docs stripped, along with the svelte-docinfo tooling
         assert!(!dir.join("src/routes/docs").exists());
@@ -286,6 +296,71 @@ mod tests {
         assert!(!read(&dir, "README.md").contains("## rust"));
         assert!(!claude.contains("## Rust workspace"));
         assert!(!claude.contains("src/routes/docs"));
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn apply_rust_only_sample() {
+        let [_, _, config] = sample_configs();
+        let dir = scratch_dir("rust_only");
+        copy_template(&dir);
+
+        let plan = build_plan(&config);
+        let issues = verify(&dir, &plan).unwrap();
+        assert!(issues.is_empty(), "verify issues: {issues:#?}");
+        assert!(conflicts(&dir, &plan).is_empty());
+        apply(&dir, &plan).unwrap();
+
+        // the SvelteKit app and its npm toolchain are gone, molt's TS twin with them
+        for path in [
+            "src",
+            "static",
+            "package.json",
+            "package-lock.json",
+            "vite.config.ts",
+            "tsconfig.json",
+            "eslint.config.js",
+            "LICENSE",
+            ".cargo",
+            "crates/molt",
+        ] {
+            assert!(!dir.join(path).exists(), "{path} survived");
+        }
+
+        // the Rust workspace stays, personalized
+        let workspace = read(&dir, "Cargo.toml");
+        assert!(workspace.contains("members = [\"crates/rusty_app\"]"));
+        let crate_manifest = read(&dir, "crates/rusty_app/Cargo.toml");
+        assert!(crate_manifest.contains("description = \"a Rust-only sample\""));
+
+        // CI keeps only the rust job, with no Node.js header or molt notes
+        let workflow = read(&dir, ".github/workflows/check.yml");
+        assert!(workflow.starts_with("# Checks the project.\n"));
+        assert!(!workflow.contains("build:"));
+        assert!(!workflow.contains("npm"));
+        assert!(!workflow.contains("node"));
+        assert!(!workflow.contains("molt"));
+        assert!(workflow.contains("jobs:\n  rust:\n"));
+        assert!(workflow.contains("cargo clippy"));
+
+        // the regenerated docs describe a Rust project, titled by its name
+        let readme = read(&dir, "README.md");
+        assert!(readme.starts_with("# rusty_app\n\n> a Rust-only sample\n"));
+        assert!(!readme.contains("## web app"));
+        assert!(readme.contains("## rust"));
+        assert!(readme.contains("cargo run -p rusty_app"));
+        let claude = read(&dir, "CLAUDE.md");
+        assert!(claude.starts_with("# rusty_app"));
+        assert!(!claude.contains("gro check"));
+        assert!(!claude.contains("src/routes"));
+        assert!(claude.contains("## Rust workspace"));
+
+        // github-extras kept, linked to the project's repo
+        assert!(
+            read(&dir, ".github/ISSUE_TEMPLATE/config.yml")
+                .contains("https://github.com/sample/rusty_app/discussions/new/choose")
+        );
 
         fs::remove_dir_all(&dir).unwrap();
     }

@@ -7,12 +7,13 @@
 [**template.fuz.dev**](https://template.fuz.dev/)
 
 fuz_template starts a SvelteKit web app, a Rust workspace for native tools like CLIs, or both.
-GUIs are web-only for now, with native in the future.
+After cloning, its [molt](#molt) wizard turns the template into your project and strips the side
+you don't need. GUIs are web-only for now, with native in the future.
 
 ## contents
 
 - [SvelteKit](https://github.com/sveltejs/kit) with [Svelte](https://github.com/sveltejs/svelte) and
-  [Vite](https://github.com/vitejs/vite) and optional [Rust](https://rust-lang.org/)
+  [Vite](https://github.com/vitejs/vite), a [Rust](https://rust-lang.org/) workspace, or both
 - [fuz_css](https://github.com/fuzdev/fuz_css): semantic-first CSS framework and design system
 - [fuz_ui](https://github.com/fuzdev/fuz_ui):
   - Svelte component library and frontend helpers - [ui.fuz.dev](https://ui.fuz.dev/)
@@ -92,6 +93,11 @@ and `template.fuz.dev` to your project name in the following files:
 - update or delete [`static/CNAME`](static/CNAME),
   ./.github/FUNDING.yml, and ./.github/ISSUE_TEMPLATE/
 
+To remove the web app for a Rust-only project, delete `src/`, `static/`,
+`package.json`, `package-lock.json`, `vite.config.ts`, `tsconfig.json`,
+`eslint.config.js`, and the `build` job in
+[`.github/workflows/check.yml`](.github/workflows/check.yml).
+
 To remove the Rust workspace, delete `Cargo.toml`, `Cargo.lock`, `crates/`,
 `.cargo/`, `rust-toolchain.toml`, `clippy.toml`, and the `rust` job in
 [`.github/workflows/check.yml`](.github/workflows/check.yml).
@@ -126,17 +132,20 @@ cargo molt check
 
 The plan, from the prompts or the equivalent flags:
 
-- renames the project everywhere (`package.json`, page titles, headings)
-- updates or removes `static/CNAME`, `homepage`, and `repository`
-- deletes the demo components and writes a minimal starting page (plus a
-  starter `src/lib/example.ts` when docs are kept — the API docs need a
-  module to document)
+- renames the project everywhere (`package.json`, page titles, headings, crate names)
+- with `sveltekit` kept, updates or removes `static/CNAME`, `homepage`, and
+  `repository`, and deletes the demo components and writes a minimal
+  starting page (plus a starter `src/lib/example.ts` when docs are kept —
+  the API docs need a module to document)
 - regenerates `README.md` and `CLAUDE.md` for the new project
 - deletes the template's 0BSD `LICENSE` and `license` fields — the new project
   chooses its own license
 - keeps or strips each optional feature, by prompt or by `--keep`/`--strip`
   lists (e.g. `--strip rust` or `--keep github-extras --strip docs`):
-  - `rust` — the whole workspace
+  - `sveltekit` — the whole web app and its npm toolchain, for a Rust-only
+    project; it takes `docs` with it, and `--npm-name`/`--domain` need it
+  - `rust` — the whole workspace, for a web-only project; a project keeps
+    `sveltekit`, `rust`, or both, never neither
   - `cli` — the starter crate at [`crates/app_cli`](crates/app_cli), renamed
     to the project name; it rides with `rust`, and stripping `cli` alone is
     rejected because a kept workspace needs a crate

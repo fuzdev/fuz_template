@@ -11,7 +11,8 @@ pub struct TopLevel {
     #[argh(option)]
     pub name: Option<String>,
 
-    /// npm package name (defaults to the project name; may be scoped like @you/name)
+    /// npm package name (defaults to the project name; may be scoped like
+    /// @you/name; needs the sveltekit feature)
     #[argh(option)]
     pub npm_name: Option<String>,
 
@@ -19,7 +20,8 @@ pub struct TopLevel {
     #[argh(option)]
     pub description: Option<String>,
 
-    /// custom domain written to static/CNAME (omit to delete CNAME and homepage)
+    /// custom domain written to static/CNAME (omit to delete CNAME and
+    /// homepage; needs the sveltekit feature)
     #[argh(option)]
     pub domain: Option<String>,
 
@@ -29,12 +31,12 @@ pub struct TopLevel {
     pub repo: Option<String>,
 
     /// features to keep, comma-separated or repeated
-    /// (rust, cli, docs, github-extras)
+    /// (sveltekit, rust, cli, docs, github-extras)
     #[argh(option)]
     pub keep: Vec<String>,
 
     /// features to strip, comma-separated or repeated
-    /// (rust, cli, docs, github-extras)
+    /// (sveltekit, rust, cli, docs, github-extras)
     #[argh(option)]
     pub strip: Vec<String>,
 

@@ -2,10 +2,11 @@
 
 > starter template for SvelteKit web apps, Rust native tools, or both, with full fuz stack integration
 
-fuz_template (`@fuzdev/fuz_template`) is a production-ready starter template for
-building static web applications with the fuz stack. Clone it to start new
-projects with TypeScript, Svelte 5, SvelteKit, and the complete fuz ecosystem
-pre-configured.
+fuz_template (`@fuzdev/fuz_template`) is a starter template for static
+SvelteKit web apps, Rust native tools, or both, with the fuz stack. Clone it
+to start new projects with TypeScript, Svelte 5, SvelteKit, a Rust workspace,
+and the complete fuz ecosystem pre-configured; molt strips the side you don't
+need.
 
 For coding conventions, see Skill(fuz-stack).
 
@@ -37,7 +38,8 @@ gro sync      # regenerate files and run svelte-kit sync
 
 ## Scope
 
-fuz_template is a **SvelteKit starter template**:
+fuz_template is a **starter template** for a static SvelteKit app, a Rust
+workspace, or both:
 
 - Pre-configured fuz stack (fuz_css, fuz_ui, fuz_util, fuz_code)
 - Dark/light theme with persistence
@@ -77,11 +79,14 @@ npm run molt # or `cargo molt`
   components); with docs kept, a starter `src/lib/example.ts` replaces them
   (the API docs prerender a page per module, so they need at least one)
 - `.gitattributes` and `.github/workflows/check.yml` - molt's notes removed
+  (with `sveltekit` stripped, the workflow also loses its `build` job and
+  Node.js guide link)
 - `LICENSE` and the `license` fields - deleted (the 0BSD license is the
   template's; your project chooses its own)
 - `static/CNAME` - update or delete for your domain
 - `.github/FUNDING.yml` and `.github/ISSUE_TEMPLATE/` - update or delete
-- `README.md` and `CLAUDE.md` - regenerate for the new project
+- `README.md` and `CLAUDE.md` - regenerate for the new project, from a shared
+  intro plus a section per kept foundation
 
 Not customized: `static/logo.svg` and `static/favicon.png` keep the template's
 spider (molt prints a reminder), and `package-lock.json` keeps the old name
@@ -121,12 +126,16 @@ Key behaviors:
   a confirm prompt, immediately before writing. Non-interactive runs write
   nothing without `--wetrun`.
 - **Feature registry**: every optional feature is a keep/strip choice —
-  `rust` (the whole workspace: `Cargo.toml`, `Cargo.lock`, `crates/`,
+  `sveltekit` (the whole app and its npm toolchain: `src/`, `static/`,
+  `package.json`, `package-lock.json`, `vite.config.ts`, `tsconfig.json`,
+  `eslint.config.js`, and the `build` CI job — molt's TS twin goes with
+  `src/`), `rust` (the whole workspace: `Cargo.toml`, `Cargo.lock`, `crates/`,
   `rust-toolchain.toml`, `clippy.toml`, and the `rust` CI job), `cli` (the
   starter crate `crates/app_cli`, renamed to `crates/{name}` with every
   `app_cli` occurrence substituted), `docs` (`src/routes/docs/` +
   `src/routes/library.ts` + the starter page's docs link + the
-  svelte-docinfo tooling: devDependency, Vite plugin, ambient types), and
+  svelte-docinfo tooling: devDependency, Vite plugin, ambient types; part of
+  `sveltekit`), and
   `github-extras` (FUNDING.yml + issue templates; the only default-strip —
   kept copies are personalized with funding placeholders and discussion
   links pointed at your repo url).
@@ -134,7 +143,10 @@ Key behaviors:
   prompt while it's `rust`'s only member feature (a kept workspace needs a
   member crate, so there is no separate decision; the `member_of` registry
   field generalizes this) — or `--keep`/`--strip` id lists (comma-separated
-  or repeated). Stripping `rust` cascades to `cli`; stripping `cli` while
+  or repeated). `sveltekit` and `rust` are the foundations: a project keeps
+  at least one, so stripping both is a usage error, and declining one in the
+  wizard keeps the other with a note. Stripping `sveltekit` cascades to
+  `docs`, and stripping `rust` cascades to `cli`; stripping `cli` while
   keeping `rust` is rejected (cargo can't load an empty workspace), and a
   prompt whose answer explicit flags already force (`--keep cli` forces the
   workspace, `--strip cli` forces stripping rust) is skipped with a note.
@@ -145,7 +157,9 @@ Key behaviors:
   TS twin in `molt.ts` — new features are one entry + a plan fragment in
   each twin (the check sample configs derive from the registry).
 - **Identity fields**: name (required), npm name, description, domain,
-  repo url — derived from the git origin when it isn't the template's
+  repo url — npm name and domain only with `sveltekit` kept (the wizard asks
+  them after the feature choices, and the flags are refused without it);
+  repo url derived from the git origin when it isn't the template's
   (compared case-insensitively). Given or derived, it's normalized to a web
   url so API-docs source links work: ssh forms (`git@host:path`,
   `ssh://git@host/path`) become https without their ssh port, userinfo (a

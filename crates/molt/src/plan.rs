@@ -115,60 +115,10 @@ pub fn lines_with_prefix(content: &str, prefix: &str) -> Vec<Range<usize>> {
 pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
     let mut plan = Vec::new();
     let name = config.name.as_str();
-    let npm_name = config.npm_name.as_str();
-
-    // package.json identity
-    plan.push(replace_once(
-        "package.json",
-        anchors::PACKAGE_JSON_NAME,
-        format!("  \"name\": \"{}\",\n", json_escape(npm_name)),
-        format!("name \u{2192} {npm_name}"),
-    ));
-    let description_replacement = if config.description.is_empty() {
-        String::new()
-    } else {
-        format!(
-            "  \"description\": \"{}\",\n",
-            json_escape(&config.description)
-        )
-    };
-    plan.push(replace_once(
-        "package.json",
-        anchors::PACKAGE_JSON_DESCRIPTION,
-        description_replacement,
-        "description",
-    ));
-    for (anchor, label) in [
-        (anchors::PACKAGE_JSON_GLYPH, "remove template glyph"),
-        (anchors::PACKAGE_JSON_LOGO, "remove template logo"),
-        (anchors::PACKAGE_JSON_LOGO_ALT, "remove template logo_alt"),
-        (
-            anchors::PACKAGE_JSON_LICENSE,
-            "remove license (choose your own)",
-        ),
-    ] {
-        plan.push(replace_once("package.json", anchor, String::new(), label));
-    }
 
     // the template's 0BSD license is fuz.dev's, not the new project's
     plan.push(Action::DeleteFile {
         path: PathBuf::from("LICENSE"),
-    });
-
-    // the TS twin ejector (`npm run molt`) is template machinery, deleted on
-    // eject like molt's own crate — the script, its npm entry, and its check
-    // test (which verifies anchors that no longer match once molted)
-    plan.push(replace_once(
-        "package.json",
-        anchors::PACKAGE_JSON_MOLT_SCRIPT,
-        String::new(),
-        "remove the molt script",
-    ));
-    plan.push(Action::DeleteFile {
-        path: PathBuf::from("src/lib/molt.ts"),
-    });
-    plan.push(Action::DeleteFile {
-        path: PathBuf::from("src/test/molt.test.ts"),
     });
     plan.push(replace_once(
         ".gitattributes",
@@ -176,153 +126,73 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
         anchors::GITATTRIBUTES_MOLT_NOTE_REPLACEMENT,
         "drop molt's note from the LF rule",
     ));
-    let homepage_replacement = config.domain.as_ref().map_or_else(String::new, |domain| {
-        format!("  \"homepage\": \"https://{domain}/\",\n")
-    });
-    plan.push(replace_once(
-        "package.json",
-        anchors::PACKAGE_JSON_HOMEPAGE,
-        homepage_replacement,
-        "homepage",
-    ));
-    let repository_replacement = config.repo_url.as_ref().map_or_else(String::new, |url| {
-        format!("  \"repository\": \"{}\",\n", json_escape(url))
-    });
-    plan.push(replace_once(
-        "package.json",
-        anchors::PACKAGE_JSON_REPOSITORY,
-        repository_replacement,
-        "repository",
-    ));
 
-    // custom domain
-    if let Some(domain) = &config.domain {
-        plan.push(Action::ReplaceFile {
-            path: PathBuf::from("static/CNAME"),
-            anchors: vec![anchors::CNAME_CONTENT.to_owned()],
-            content: format!("{domain}\n"),
-            label: format!("custom domain \u{2192} {domain}"),
-        });
+    if config.keeps(features::SVELTEKIT) {
+        push_sveltekit_actions(config, &mut plan);
     } else {
-        plan.push(Action::DeleteFile {
-            path: PathBuf::from("static/CNAME"),
-        });
-    }
-
-    // root layout: title + template logo
-    plan.push(replace_once(
-        "src/routes/+layout.svelte",
-        anchors::LAYOUT_LOGO_IMPORT,
-        String::new(),
-        "remove template logo import",
-    ));
-    plan.push(replace_once(
-        "src/routes/+layout.svelte",
-        anchors::LAYOUT_SITE_STATE,
-        anchors::LAYOUT_SITE_STATE_REPLACEMENT,
-        "drop template icon",
-    ));
-    // the project name, not the npm name — a scoped `@you/app` reads badly
-    // in a browser tab
-    plan.push(replace_once(
-        "src/routes/+layout.svelte",
-        anchors::LAYOUT_TITLE,
-        format!("<title>{name}</title>"),
-        format!("title \u{2192} {name}"),
-    ));
-
-    // starter page + demo components
-    let docs_link = if config.keeps(features::DOCS) {
-        templates::PAGE_DOCS_LINK
-    } else {
-        ""
-    };
-    plan.push(Action::ReplaceFile {
-        path: PathBuf::from("src/routes/+page.svelte"),
-        anchors: vec![
-            anchors::PAGE_MREOWS_IMPORT.to_owned(),
-            anchors::H1_FUZ_TEMPLATE.to_owned(),
-        ],
-        content: templates::render(
-            templates::PAGE_SVELTE,
-            &[("__NAME__", name), ("__DOCS_LINK__", docs_link)],
-        ),
-        label: "minimal starter page".to_owned(),
-    });
-    plan.push(replace_once(
-        "src/routes/about/+page.svelte",
-        anchors::H1_FUZ_TEMPLATE,
-        format!("<h1 class=\"mt_xl2\">{name}</h1>"),
-        format!("heading \u{2192} {name}"),
-    ));
-    plan.push(Action::DeleteFile {
-        path: PathBuf::from("src/lib/Mreows.svelte"),
-    });
-    plan.push(Action::DeleteFile {
-        path: PathBuf::from("src/lib/Positioned.svelte"),
-    });
-    // the API docs prerender a page per `src/lib/` module, so deleting the
-    // demo components would leave the docs build with no pages to render
-    if config.keeps(features::DOCS) {
-        plan.push(Action::CreateFile {
-            path: PathBuf::from("src/lib/example.ts"),
-            content: templates::render(templates::EXAMPLE_TS, &[("__NAME__", name)]),
-            label: "starter module (the API docs need one)".to_owned(),
-        });
-    }
-
-    // docs system, and the svelte-docinfo tooling that exists only for it
-    if !config.keeps(features::DOCS) {
-        plan.push(Action::DeleteDir {
-            path: PathBuf::from("src/routes/docs"),
-        });
-        plan.push(Action::DeleteFile {
-            path: PathBuf::from("src/routes/library.ts"),
-        });
-        plan.push(Action::RemoveLine {
-            path: PathBuf::from("package.json"),
-            prefix: anchors::PACKAGE_JSON_SVELTE_DOCINFO.to_owned(),
-            suffix: anchors::PACKAGE_JSON_SVELTE_DOCINFO_SUFFIX.to_owned(),
-            label: "remove the svelte-docinfo devDependency".to_owned(),
-        });
+        // the SvelteKit app and its npm toolchain — molt's TS twin and its
+        // check test go with `src/`
         plan.push(replace_once(
+            ".github/workflows/check.yml",
+            anchors::CI_HEADER,
+            anchors::CI_HEADER_REPLACEMENT,
+            "drop the Node.js guide link",
+        ));
+        plan.push(replace_once(
+            ".github/workflows/check.yml",
+            anchors::CI_BUILD_JOB,
+            String::new(),
+            "remove the build job",
+        ));
+        for path in ["src", "static"] {
+            plan.push(Action::DeleteDir {
+                path: PathBuf::from(path),
+            });
+        }
+        for path in [
+            "package.json",
+            "package-lock.json",
             "vite.config.ts",
-            anchors::VITE_DOCINFO_IMPORT,
-            String::new(),
-            "remove the svelte-docinfo import",
-        ));
-        plan.push(replace_once(
-            "vite.config.ts",
-            anchors::VITE_DOCINFO_PLUGIN,
-            String::new(),
-            "remove the svelte-docinfo plugin",
-        ));
-        plan.push(replace_once(
-            "src/app.d.ts",
-            anchors::APP_D_TS_DOCINFO,
-            String::new(),
-            "remove the svelte-docinfo ambient types",
-        ));
+            "tsconfig.json",
+            "eslint.config.js",
+        ] {
+            plan.push(Action::DeleteFile {
+                path: PathBuf::from(path),
+            });
+        }
     }
 
-    // regenerated docs
+    // regenerated docs; each section renders its own placeholders first,
+    // since `render` never rescans inserted values
     let description_block = if config.description.is_empty() {
         String::new()
     } else {
         format!("> {}\n\n", config.description)
     };
-    let (readme_rust, claude_rust) = if config.keeps(features::RUST) {
+    let (title, readme_sveltekit, claude_sveltekit) = if config.keeps(features::SVELTEKIT) {
+        let claude_docs_bullet = if config.keeps(features::DOCS) {
+            templates::CLAUDE_DOCS_BULLET
+        } else {
+            ""
+        };
         (
-            templates::README_RUST_SECTION,
-            templates::CLAUDE_RUST_SECTION,
+            config.npm_name.as_str(),
+            templates::README_SVELTEKIT_SECTION.to_owned(),
+            templates::render(
+                templates::CLAUDE_SVELTEKIT_SECTION,
+                &[("__DOCS_BULLET__", claude_docs_bullet)],
+            ),
         )
     } else {
-        ("", "")
+        (name, String::new(), String::new())
     };
-    let claude_docs_bullet = if config.keeps(features::DOCS) {
-        templates::CLAUDE_DOCS_BULLET
+    let (readme_rust, claude_rust) = if config.keeps(features::RUST) {
+        (
+            templates::render(templates::README_RUST_SECTION, &[("__NAME__", name)]),
+            templates::render(templates::CLAUDE_RUST_SECTION, &[("__NAME__", name)]),
+        )
     } else {
-        ""
+        (String::new(), String::new())
     };
     plan.push(Action::ReplaceFile {
         path: PathBuf::from("README.md"),
@@ -330,9 +200,10 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
         content: templates::render(
             templates::README_MD,
             &[
-                ("__NPM_NAME__", npm_name),
+                ("__TITLE__", title),
                 ("__DESCRIPTION_BLOCK__", &description_block),
-                ("__RUST_SECTION__", readme_rust),
+                ("__SVELTEKIT_SECTION__", &readme_sveltekit),
+                ("__RUST_SECTION__", &readme_rust),
             ],
         ),
         label: "regenerate for the new project".to_owned(),
@@ -345,8 +216,8 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
             &[
                 ("__NAME__", name),
                 ("__DESCRIPTION_BLOCK__", &description_block),
-                ("__DOCS_BULLET__", claude_docs_bullet),
-                ("__RUST_SECTION__", claude_rust),
+                ("__SVELTEKIT_SECTION__", &claude_sveltekit),
+                ("__RUST_SECTION__", &claude_rust),
             ],
         ),
         label: "regenerate for the new project (AGENTS.md symlinks here)".to_owned(),
@@ -476,6 +347,198 @@ pub fn build_plan(config: &MoltConfig) -> Vec<Action> {
     ordered
 }
 
+/// The edits that personalize a kept `sveltekit` app: `package.json`
+/// identity, the TS twin's removal, the custom domain, the layout and starter
+/// page, the demo components, and the docs system.
+fn push_sveltekit_actions(config: &MoltConfig, plan: &mut Vec<Action>) {
+    let name = config.name.as_str();
+    let npm_name = config.npm_name.as_str();
+
+    // package.json identity
+    plan.push(replace_once(
+        "package.json",
+        anchors::PACKAGE_JSON_NAME,
+        format!("  \"name\": \"{}\",\n", json_escape(npm_name)),
+        format!("name \u{2192} {npm_name}"),
+    ));
+    let description_replacement = if config.description.is_empty() {
+        String::new()
+    } else {
+        format!(
+            "  \"description\": \"{}\",\n",
+            json_escape(&config.description)
+        )
+    };
+    plan.push(replace_once(
+        "package.json",
+        anchors::PACKAGE_JSON_DESCRIPTION,
+        description_replacement,
+        "description",
+    ));
+    for (anchor, label) in [
+        (anchors::PACKAGE_JSON_GLYPH, "remove template glyph"),
+        (anchors::PACKAGE_JSON_LOGO, "remove template logo"),
+        (anchors::PACKAGE_JSON_LOGO_ALT, "remove template logo_alt"),
+        (
+            anchors::PACKAGE_JSON_LICENSE,
+            "remove license (choose your own)",
+        ),
+    ] {
+        plan.push(replace_once("package.json", anchor, String::new(), label));
+    }
+
+    // the TS twin ejector (`npm run molt`) is template machinery, deleted on
+    // eject like molt's own crate — the script, its npm entry, and its check
+    // test (which verifies anchors that no longer match once molted)
+    plan.push(replace_once(
+        "package.json",
+        anchors::PACKAGE_JSON_MOLT_SCRIPT,
+        String::new(),
+        "remove the molt script",
+    ));
+    plan.push(Action::DeleteFile {
+        path: PathBuf::from("src/lib/molt.ts"),
+    });
+    plan.push(Action::DeleteFile {
+        path: PathBuf::from("src/test/molt.test.ts"),
+    });
+    let homepage_replacement = config.domain.as_ref().map_or_else(String::new, |domain| {
+        format!("  \"homepage\": \"https://{domain}/\",\n")
+    });
+    plan.push(replace_once(
+        "package.json",
+        anchors::PACKAGE_JSON_HOMEPAGE,
+        homepage_replacement,
+        "homepage",
+    ));
+    let repository_replacement = config.repo_url.as_ref().map_or_else(String::new, |url| {
+        format!("  \"repository\": \"{}\",\n", json_escape(url))
+    });
+    plan.push(replace_once(
+        "package.json",
+        anchors::PACKAGE_JSON_REPOSITORY,
+        repository_replacement,
+        "repository",
+    ));
+
+    // custom domain
+    if let Some(domain) = &config.domain {
+        plan.push(Action::ReplaceFile {
+            path: PathBuf::from("static/CNAME"),
+            anchors: vec![anchors::CNAME_CONTENT.to_owned()],
+            content: format!("{domain}\n"),
+            label: format!("custom domain \u{2192} {domain}"),
+        });
+    } else {
+        plan.push(Action::DeleteFile {
+            path: PathBuf::from("static/CNAME"),
+        });
+    }
+
+    // root layout: title + template logo
+    plan.push(replace_once(
+        "src/routes/+layout.svelte",
+        anchors::LAYOUT_LOGO_IMPORT,
+        String::new(),
+        "remove template logo import",
+    ));
+    plan.push(replace_once(
+        "src/routes/+layout.svelte",
+        anchors::LAYOUT_SITE_STATE,
+        anchors::LAYOUT_SITE_STATE_REPLACEMENT,
+        "drop template icon",
+    ));
+    // the project name, not the npm name — a scoped `@you/app` reads badly
+    // in a browser tab
+    plan.push(replace_once(
+        "src/routes/+layout.svelte",
+        anchors::LAYOUT_TITLE,
+        format!("<title>{name}</title>"),
+        format!("title \u{2192} {name}"),
+    ));
+
+    // starter page + demo components
+    let docs_link = if config.keeps(features::DOCS) {
+        templates::PAGE_DOCS_LINK
+    } else {
+        ""
+    };
+    plan.push(Action::ReplaceFile {
+        path: PathBuf::from("src/routes/+page.svelte"),
+        anchors: vec![
+            anchors::PAGE_MREOWS_IMPORT.to_owned(),
+            anchors::H1_FUZ_TEMPLATE.to_owned(),
+        ],
+        content: templates::render(
+            templates::PAGE_SVELTE,
+            &[("__NAME__", name), ("__DOCS_LINK__", docs_link)],
+        ),
+        label: "minimal starter page".to_owned(),
+    });
+    plan.push(replace_once(
+        "src/routes/about/+page.svelte",
+        anchors::H1_FUZ_TEMPLATE,
+        format!("<h1 class=\"mt_xl2\">{name}</h1>"),
+        format!("heading \u{2192} {name}"),
+    ));
+    plan.push(Action::DeleteFile {
+        path: PathBuf::from("src/lib/Mreows.svelte"),
+    });
+    plan.push(Action::DeleteFile {
+        path: PathBuf::from("src/lib/Positioned.svelte"),
+    });
+    // the API docs prerender a page per `src/lib/` module, so deleting the
+    // demo components would leave the docs build with no pages to render
+    if config.keeps(features::DOCS) {
+        plan.push(Action::CreateFile {
+            path: PathBuf::from("src/lib/example.ts"),
+            content: templates::render(templates::EXAMPLE_TS, &[("__NAME__", name)]),
+            label: "starter module (the API docs need one)".to_owned(),
+        });
+    }
+
+    // docs system, and the svelte-docinfo tooling that exists only for it
+    if !config.keeps(features::DOCS) {
+        plan.push(Action::DeleteDir {
+            path: PathBuf::from("src/routes/docs"),
+        });
+        plan.push(Action::DeleteFile {
+            path: PathBuf::from("src/routes/library.ts"),
+        });
+        plan.push(Action::RemoveLine {
+            path: PathBuf::from("package.json"),
+            prefix: anchors::PACKAGE_JSON_SVELTE_DOCINFO.to_owned(),
+            suffix: anchors::PACKAGE_JSON_SVELTE_DOCINFO_SUFFIX.to_owned(),
+            label: "remove the svelte-docinfo devDependency".to_owned(),
+        });
+        plan.push(replace_once(
+            "vite.config.ts",
+            anchors::VITE_DOCINFO_IMPORT,
+            String::new(),
+            "remove the svelte-docinfo import",
+        ));
+        plan.push(replace_once(
+            "vite.config.ts",
+            anchors::VITE_DOCINFO_PLUGIN,
+            String::new(),
+            "remove the svelte-docinfo plugin",
+        ));
+        plan.push(replace_once(
+            "src/app.d.ts",
+            anchors::APP_D_TS_DOCINFO,
+            String::new(),
+            "remove the svelte-docinfo ambient types",
+        ));
+    }
+
+    plan.push(replace_once(
+        ".github/workflows/check.yml",
+        anchors::CI_BUILD_JOB_MOLT_COMMENT,
+        String::new(),
+        "remove molt's note from the build job",
+    ));
+}
+
 /// Verifies every action's preconditions against the tree at `root`,
 /// returning human-readable issues (empty = the plan is applicable).
 pub fn verify(root: &Path, plan: &[Action]) -> Result<Vec<String>, CliError> {
@@ -601,6 +664,27 @@ fn read(root: &Path, path: &Path) -> Result<Option<String>, CliError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rendered_files_leave_no_placeholders() {
+        // sections render their own placeholders before insertion, since
+        // `render` never rescans inserted values
+        for config in crate::check::sample_configs() {
+            for action in build_plan(&config) {
+                let (Action::ReplaceFile { path, content, .. }
+                | Action::CreateFile { path, content, .. }) = action
+                else {
+                    continue;
+                };
+                let label = format!("{}: {}", config.name, path.display());
+                assert!(!content.contains("__"), "{label}");
+                if path.extension().is_some_and(|ext| ext == "md") {
+                    assert!(content.ends_with('\n'), "{label}");
+                    assert!(!content.ends_with("\n\n"), "{label}");
+                }
+            }
+        }
+    }
 
     #[test]
     fn lines_with_prefix_matches_whole_lines() {

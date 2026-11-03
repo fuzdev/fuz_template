@@ -3,6 +3,10 @@
 pub const PAGE_SVELTE: &str = include_str!("../templates/page.svelte.in");
 pub const README_MD: &str = include_str!("../templates/README.md.in");
 pub const CLAUDE_MD: &str = include_str!("../templates/CLAUDE.md.in");
+pub const README_SVELTEKIT_SECTION: &str =
+    include_str!("../templates/readme_sveltekit_section.md.in");
+pub const CLAUDE_SVELTEKIT_SECTION: &str =
+    include_str!("../templates/claude_sveltekit_section.md.in");
 pub const README_RUST_SECTION: &str = include_str!("../templates/readme_rust_section.md.in");
 pub const CLAUDE_RUST_SECTION: &str = include_str!("../templates/claude_rust_section.md.in");
 pub const WORKSPACE_CARGO_TOML: &str = include_str!("../templates/workspace_cargo.toml.in");
@@ -11,7 +15,8 @@ pub const EXAMPLE_TS: &str = include_str!("../templates/example.ts.in");
 
 /// The starter page's docs link, substituted only when docs are kept.
 pub const PAGE_DOCS_LINK: &str = " \u{b7} <a href={resolve('/docs')}>docs</a>";
-/// The generated CLAUDE.md's docs bullet, substituted only when docs are kept.
+/// The generated CLAUDE.md's docs bullet, substituted into the `sveltekit`
+/// section only when docs are kept.
 pub const CLAUDE_DOCS_BULLET: &str = "- `src/routes/docs/` \u{2014} documentation pages with auto-generated API docs from\n  the `svelte-docinfo` Vite plugin\n";
 
 /// Substitutes `__PLACEHOLDER__` tokens in an embedded template.
@@ -65,8 +70,9 @@ mod tests {
         // typo'd token in a template fails here instead of leaking into output.
         let known = [
             "__NAME__",
-            "__NPM_NAME__",
+            "__TITLE__",
             "__DESCRIPTION_BLOCK__",
+            "__SVELTEKIT_SECTION__",
             "__RUST_SECTION__",
             "__DOCS_LINK__",
             "__DOCS_BULLET__",
@@ -77,6 +83,8 @@ mod tests {
             PAGE_SVELTE,
             README_MD,
             CLAUDE_MD,
+            README_SVELTEKIT_SECTION,
+            CLAUDE_SVELTEKIT_SECTION,
             README_RUST_SECTION,
             CLAUDE_RUST_SECTION,
             WORKSPACE_CARGO_TOML,

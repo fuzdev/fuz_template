@@ -23,6 +23,10 @@ use crate::cli::TopLevel;
 use crate::config::MoltConfig;
 use crate::error::CliError;
 
+/// The refusal to strip both foundations, which would leave nothing to build.
+const FOUNDATION_NEEDED: &str =
+    "stripping both sveltekit and rust leaves nothing to build \u{2014} keep at least one";
+
 /// The non-interactive refusal to keep docs without a repository url.
 const DOCS_NEEDS_REPO: &str = "keeping docs needs a repository url (the API docs link to source) \u{2014} pass --repo <url>, or --strip docs";
 
@@ -242,17 +246,6 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
         }
     };
 
-    let npm_name = match &top.npm_name {
-        Some(npm_name) => {
-            config::validate_npm_name(npm_name)?;
-            npm_name.clone()
-        }
-        None if interactive => {
-            wizard::prompt_validated("npm package name", Some(&name), config::validate_npm_name)?
-        }
-        None => name.clone(),
-    };
-
     let description = match &top.description {
         Some(description) => {
             let description = description.trim().to_owned();
@@ -261,29 +254,6 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
         }
         None if interactive => wizard::prompt("one-line description (optional)", Some(""))?,
         None => String::new(),
-    };
-
-    let domain = match &top.domain {
-        Some(domain) => {
-            let domain = non_empty(domain);
-            if let Some(domain) = &domain {
-                config::validate_domain(domain)?;
-            }
-            domain
-        }
-        None if interactive => non_empty(&wizard::prompt_validated(
-            "custom domain like example.com (optional; sets CNAME + homepage)",
-            Some(""),
-            |value| {
-                let trimmed = value.trim();
-                if trimmed.is_empty() {
-                    Ok(())
-                } else {
-                    config::validate_domain(trimmed)
-                }
-            },
-        )?),
-        None => None,
     };
 
     let derived_repo = git::output(root, &["remote", "get-url", "origin"])?
@@ -299,10 +269,17 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
     };
 
     let (mut kept, explicit) = features::resolve(&top.keep, &top.strip)?;
+    // a flag conflict, so refused before any prompt
+    if explicit.contains(features::SVELTEKIT)
+        && !kept.contains(features::SVELTEKIT)
+        && let Some(flag) = sveltekit_only_flag(top)
+    {
+        return Err(sveltekit_only_flag_error(flag));
+    }
     if interactive {
         // registry order puts parents before dependents, so `requires` and
         // `member_of` parents are already decided when a dependent comes up
-        for feature in &features::FEATURES {
+        for (position, feature) in features::FEATURES.iter().enumerate() {
             if explicit.contains(feature.id) {
                 continue;
             }
@@ -314,6 +291,13 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
             }
             // a prompt whose answer explicit flags already force is skipped
             // with a note instead of contradicting the flag after the fact
+            if feature.id == features::SVELTEKIT
+                && let Some(flag) = sveltekit_only_flag(top)
+            {
+                println!("note: keeping sveltekit \u{2014} {flag} needs it");
+                kept.insert(feature.id);
+                continue;
+            }
             if let Some(child) = features::FEATURES.iter().find(|f| {
                 f.requires == Some(feature.id) && explicit.contains(f.id) && kept.contains(f.id)
             }) {
@@ -326,10 +310,7 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
             }
             // a parent whose members were all explicitly stripped can't be
             // kept (e.g. cargo rejects a workspace with no member crates)
-            if features::members_of(feature.id).next().is_some()
-                && features::members_of(feature.id)
-                    .all(|m| explicit.contains(m.id) && !kept.contains(m.id))
-            {
+            if features::members_force_strip(feature.id, &kept, &explicit) {
                 let members = features::members_of(feature.id)
                     .map(|m| m.id)
                     .collect::<Vec<_>>()
@@ -339,6 +320,31 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
                     feature.id
                 );
                 kept.remove(feature.id);
+                continue;
+            }
+            // the last foundation left can't be declined — a project needs
+            // sveltekit or rust; flags that strip both are rejected below.
+            // another foundation is already out when it was decided stripped
+            // (by a flag or an earlier prompt) or flags strip its members
+            if features::FOUNDATIONS.contains(&feature.id)
+                && features::FOUNDATIONS
+                    .iter()
+                    .filter(|id| **id != feature.id)
+                    .all(|id| {
+                        let decided = explicit.contains(id)
+                            || features::FEATURES
+                                .iter()
+                                .position(|f| f.id == *id)
+                                .is_some_and(|other| other < position);
+                        (decided && !kept.contains(id))
+                            || features::members_force_strip(id, &kept, &explicit)
+                    })
+            {
+                println!(
+                    "note: keeping {} \u{2014} the project needs sveltekit or rust",
+                    feature.id
+                );
+                kept.insert(feature.id);
                 continue;
             }
             // the sole member of a kept parent rides with the parent's
@@ -379,9 +385,20 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
             .map(|m| m.id)
             .collect::<Vec<_>>()
             .join(", ");
+        // stripping the parent is no way out when it's the last foundation
+        let mut without_parent = kept.clone();
+        without_parent.remove(parent);
+        let remedy = if features::has_foundation(&without_parent) {
+            format!("keep one, or strip {parent} too")
+        } else {
+            format!("keep one \u{2014} {parent} is the last of sveltekit and rust kept")
+        };
         return Err(CliError::Usage(format!(
-            "keeping {parent} requires at least one of its member features ({members}) — keep one, or strip {parent} too"
+            "keeping {parent} requires at least one of its member features ({members}) \u{2014} {remedy}"
         )));
+    }
+    if !features::has_foundation(&kept) {
+        return Err(CliError::Usage(FOUNDATION_NEEDED.to_owned()));
     }
 
     // the API docs link each module to its source, and fuz_ui's `Library`
@@ -412,6 +429,48 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
         }
     }
 
+    // the npm name and custom domain exist only in the SvelteKit app, so
+    // they're asked after the feature choices, and refused without the app
+    let sveltekit = kept.contains(features::SVELTEKIT);
+    if !sveltekit && let Some(flag) = sveltekit_only_flag(top) {
+        return Err(sveltekit_only_flag_error(flag));
+    }
+    let npm_name = match &top.npm_name {
+        None if !sveltekit => name.clone(),
+        Some(npm_name) => {
+            config::validate_npm_name(npm_name)?;
+            npm_name.clone()
+        }
+        None if interactive => {
+            wizard::prompt_validated("npm package name", Some(&name), config::validate_npm_name)?
+        }
+        None => name.clone(),
+    };
+
+    let domain = match &top.domain {
+        None if !sveltekit => None,
+        Some(domain) => {
+            let domain = non_empty(domain);
+            if let Some(domain) = &domain {
+                config::validate_domain(domain)?;
+            }
+            domain
+        }
+        None if interactive => non_empty(&wizard::prompt_validated(
+            "custom domain like example.com (optional; sets CNAME + homepage)",
+            Some(""),
+            |value| {
+                let trimmed = value.trim();
+                if trimmed.is_empty() {
+                    Ok(())
+                } else {
+                    config::validate_domain(trimmed)
+                }
+            },
+        )?),
+        None => None,
+    };
+
     Ok(MoltConfig {
         name,
         npm_name,
@@ -420,6 +479,24 @@ fn resolve_config(top: &TopLevel, root: &Path, interactive: bool) -> Result<Molt
         repo_url,
         kept,
     })
+}
+
+/// The first flag passed that only the `sveltekit` app uses, if any — an
+/// empty `--domain` means no domain, so it doesn't count.
+fn sveltekit_only_flag(top: &TopLevel) -> Option<&'static str> {
+    if top.npm_name.is_some() {
+        Some("--npm-name")
+    } else if top.domain.as_deref().is_some_and(|d| !d.trim().is_empty()) {
+        Some("--domain")
+    } else {
+        None
+    }
+}
+
+fn sveltekit_only_flag_error(flag: &str) -> CliError {
+    CliError::Usage(format!(
+        "{flag} applies only to the SvelteKit app \u{2014} drop it, or keep sveltekit"
+    ))
 }
 
 /// Prompts for a repository url, re-asking until the answer parses (and,
@@ -458,8 +535,14 @@ fn print_next_steps(config: &MoltConfig, clean: bool) {
         config.name
     );
     println!("  git status   # review what changed");
-    println!("  npm i        # refresh package-lock.json for the new name");
-    println!("  gro check    # typecheck, test, lint, format");
+    if config.keeps(features::SVELTEKIT) {
+        println!("  npm i        # refresh package-lock.json for the new name");
+        println!("  gro check    # typecheck, test, lint, format");
+    } else {
+        println!(
+            "  rm -rf node_modules .svelte-kit .gro  # the npm toolchain's untracked leftovers, if present"
+        );
+    }
     if config.keeps(features::RUST) {
         println!(
             "  cargo check  # refresh Cargo.lock for your crate (CI's cargo steps run --locked)"
@@ -472,9 +555,13 @@ fn print_next_steps(config: &MoltConfig, clean: bool) {
     if clean {
         println!("\nto undo the molt: git reset --hard && git clean -fd");
     }
-    println!(
-        "\nstatic/logo.svg and static/favicon.png still carry the template's spider — replace them when ready."
-    );
+    if config.keeps(features::SVELTEKIT) {
+        println!(
+            "\nstatic/logo.svg and static/favicon.png still carry the template's spider — replace them when ready."
+        );
+    } else {
+        println!();
+    }
     println!(
         "molt deleted the template's 0BSD LICENSE and license fields — choose your own: https://choosealicense.com/"
     );
@@ -561,6 +648,81 @@ mod tests {
         .unwrap();
         assert!(!config.keeps(features::DOCS));
         assert!(config.repo_url.is_none());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn stripping_sveltekit_needs_rust_and_refuses_its_flags() {
+        let dir = env::temp_dir().join(format!(
+            "fuz_template_molt_test_strip_sveltekit_{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        assert!(git::output(&dir, &["init", "-q"]).unwrap().is_some());
+        // a Rust-only project needs no repo url: docs go with the app
+        let config = resolve_config(
+            &top(&["--name", "demo_app", "--strip", "sveltekit"]),
+            &dir,
+            false,
+        )
+        .unwrap();
+        assert!(!config.keeps(features::SVELTEKIT));
+        assert!(!config.keeps(features::DOCS));
+        assert!(config.keeps(features::RUST));
+        assert_eq!(config.npm_name, "demo_app");
+        assert!(config.domain.is_none());
+        let err = resolve_config(
+            &top(&["--name", "demo_app", "--strip", "sveltekit,rust"]),
+            &dir,
+            false,
+        )
+        .unwrap_err();
+        assert_eq!(err.to_string(), FOUNDATION_NEEDED);
+        assert_eq!(err.exit_code(), 2);
+        // an empty --domain means no domain, not a SvelteKit-only flag
+        assert!(
+            resolve_config(
+                &top(&[
+                    "--name",
+                    "demo_app",
+                    "--strip",
+                    "sveltekit",
+                    "--domain",
+                    " "
+                ]),
+                &dir,
+                false,
+            )
+            .is_ok()
+        );
+        // stripping cli forces rust out, and rust is the last foundation
+        // kept, so the error can't suggest stripping rust too
+        let err = resolve_config(
+            &top(&["--name", "demo_app", "--strip", "sveltekit,cli"]),
+            &dir,
+            false,
+        )
+        .unwrap_err();
+        assert!(
+            err.to_string()
+                .ends_with("rust is the last of sveltekit and rust kept"),
+            "{err}"
+        );
+        for flag in ["--npm-name", "--domain"] {
+            let value = if flag == "--domain" {
+                "example.com"
+            } else {
+                "demo"
+            };
+            let err = resolve_config(
+                &top(&["--name", "demo_app", "--strip", "sveltekit", flag, value]),
+                &dir,
+                false,
+            )
+            .unwrap_err();
+            assert!(err.to_string().starts_with(flag), "{err}");
+            assert_eq!(err.exit_code(), 2);
+        }
         std::fs::remove_dir_all(&dir).unwrap();
     }
 

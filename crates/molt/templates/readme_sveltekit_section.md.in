@@ -1,0 +1,17 @@
+
+## web app
+
+A static web app with TypeScript,
+[Svelte](https://github.com/sveltejs/svelte),
+[SvelteKit](https://github.com/sveltejs/kit) with the static adapter,
+[fuz_css](https://github.com/fuzdev/fuz_css),
+[fuz_ui](https://github.com/fuzdev/fuz_ui),
+and [Gro](https://github.com/fuzdev/gro).
+
+```bash
+npm i
+npm run dev # or `gro dev`
+gro check   # typecheck, test, lint, format check
+gro build
+gro deploy  # build, commit, and push to the `deploy` branch, e.g. for GitHub Pages
+```

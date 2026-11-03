@@ -23,6 +23,8 @@ permissions:
 
 jobs:
   build:
+    # molt anchors this job (crates/molt/src/anchors.rs) so stripping
+    # the sveltekit feature can remove it — update the anchor when editing.
     runs-on: ubuntu-latest
     timeout-minutes: 15
 

@@ -1,5 +1,5 @@
 // Twin of the tests in `crates/molt` — verifies the TS ejector's anchors
-// against the working tree and exercises both sample plans end to end, so a
+// against the working tree and exercises the sample plans end to end, so a
 // template edit that would break `npm run molt` fails `gro test` (and CI) at
 // the same commit, exactly like the Rust twin fails `cargo test`.
 
@@ -24,8 +24,10 @@ import {
 	DOCS,
 	DOCS_NEEDS_REPO,
 	FEATURES,
+	FOUNDATION_NEEDED,
 	GITHUB_EXTRAS,
 	RUST,
+	SVELTEKIT,
 	type Action,
 	apply,
 	apply_gate,
@@ -34,9 +36,11 @@ import {
 	conflicts,
 	empty_groups,
 	git_output,
+	has_foundation,
 	json_escape,
 	lines_with_prefix,
 	load_templates,
+	members_force_strip,
 	members_of,
 	normalize_remote_url,
 	parse_optional_repo_url,
@@ -64,6 +68,9 @@ const copy_template = (destination: string): void => {
 	for (const file of [
 		'.gitattributes',
 		'package.json',
+		'package-lock.json',
+		'tsconfig.json',
+		'eslint.config.js',
 		'README.md',
 		'CLAUDE.md',
 		'LICENSE',
@@ -157,10 +164,15 @@ describe('apply', () => {
 		assert.ok(read(dir, 'src/lib/example.ts').includes('from sample_app'));
 		assert.ok(existsSync(join(dir, 'src/routes/library.ts')));
 
-		assert.ok(read(dir, 'README.md').startsWith('# @sample/sample_app'));
+		const readme = read(dir, 'README.md');
+		assert.ok(readme.startsWith('# @sample/sample_app'));
+		assert.ok(readme.includes('## web app'));
+		assert.ok(readme.includes('cargo run -p sample_app'));
 		const claude = read(dir, 'CLAUDE.md');
 		assert.ok(claude.startsWith('# sample_app'));
+		assert.ok(claude.includes('## Web app'));
 		assert.ok(claude.includes('## Rust workspace'));
+		assert.ok(claude.includes('crates/sample_app'));
 		assert.ok(claude.includes('src/routes/docs'));
 
 		// github-extras kept: personalized, never the template author's links
@@ -173,6 +185,7 @@ describe('apply', () => {
 		assert.ok(!read(dir, '.github/ISSUE_TEMPLATE/preapproved.md').includes('fuzdev/fuz_template'));
 		const workflow = read(dir, '.github/workflows/check.yml');
 		assert.ok(workflow.includes('cargo clippy'));
+		assert.ok(workflow.includes('npx @fuzdev/gro check'));
 		assert.ok(!workflow.includes('molt'));
 
 		// docs kept: the svelte-docinfo tooling stays
@@ -233,6 +246,7 @@ describe('apply', () => {
 		const workflow = read(dir, '.github/workflows/check.yml');
 		assert.ok(!workflow.includes('cargo'));
 		assert.ok(workflow.includes('npx @fuzdev/gro check'));
+		assert.ok(!workflow.includes('molt'));
 
 		// docs stripped, along with the svelte-docinfo tooling
 		assert.ok(!existsSync(join(dir, 'src/routes/docs')));
@@ -257,6 +271,87 @@ describe('apply', () => {
 		assert_formatted(dir, plan);
 
 		rmSync(dir, { recursive: true });
+	});
+
+	test('rust-only sample', () => {
+		const [, , config] = sample_configs();
+		const dir = scratch_dir('rust_only');
+		copy_template(dir);
+
+		const plan = build_plan(config, load_templates(dir));
+		const issues = verify(dir, plan);
+		assert.deepEqual(issues, []);
+		assert.deepEqual(conflicts(dir, plan), []);
+		apply(dir, plan);
+
+		// the SvelteKit app and its npm toolchain are gone, molt's TS twin with them
+		for (const path of [
+			'src',
+			'static',
+			'package.json',
+			'package-lock.json',
+			'vite.config.ts',
+			'tsconfig.json',
+			'eslint.config.js',
+			'LICENSE',
+			'.cargo',
+			'crates/molt'
+		]) {
+			assert.ok(!existsSync(join(dir, path)), `${path} survived`);
+		}
+
+		// the Rust workspace stays, personalized
+		assert.ok(read(dir, 'Cargo.toml').includes('members = ["crates/rusty_app"]'));
+		assert.ok(
+			read(dir, 'crates/rusty_app/Cargo.toml').includes('description = "a Rust-only sample"')
+		);
+
+		// CI keeps only the rust job, with no Node.js header or molt notes
+		const workflow = read(dir, '.github/workflows/check.yml');
+		assert.ok(workflow.startsWith('# Checks the project.\n'));
+		assert.ok(!workflow.includes('build:'));
+		assert.ok(!workflow.includes('npm'));
+		assert.ok(!workflow.includes('node'));
+		assert.ok(!workflow.includes('molt'));
+		assert.ok(workflow.includes('jobs:\n  rust:\n'));
+		assert.ok(workflow.includes('cargo clippy'));
+
+		// the regenerated docs describe a Rust project, titled by its name
+		const readme = read(dir, 'README.md');
+		assert.ok(readme.startsWith('# rusty_app\n\n> a Rust-only sample\n'));
+		assert.ok(!readme.includes('## web app'));
+		assert.ok(readme.includes('## rust'));
+		assert.ok(readme.includes('cargo run -p rusty_app'));
+		const claude = read(dir, 'CLAUDE.md');
+		assert.ok(claude.startsWith('# rusty_app'));
+		assert.ok(!claude.includes('gro check'));
+		assert.ok(!claude.includes('src/routes'));
+		assert.ok(claude.includes('## Rust workspace'));
+
+		// github-extras kept, linked to the project's repo
+		assert.ok(
+			read(dir, '.github/ISSUE_TEMPLATE/config.yml').includes(
+				'https://github.com/sample/rusty_app/discussions/new/choose'
+			)
+		);
+
+		rmSync(dir, { recursive: true });
+	});
+
+	test('rendered files leave no placeholders', () => {
+		// sections render their own placeholders before insertion, since
+		// `render` never rescans inserted values
+		for (const config of sample_configs()) {
+			for (const action of build_plan(config, load_templates(repo_root))) {
+				if (action.kind !== 'replace_file' && action.kind !== 'create_file') continue;
+				const label = `${config.name}: ${action.path}`;
+				assert.ok(!action.content.includes('__'), label);
+				if (action.path.endsWith('.md')) {
+					assert.ok(action.content.endsWith('\n'), label);
+					assert.ok(!action.content.endsWith('\n\n'), label);
+				}
+			}
+		}
 	});
 });
 
@@ -370,6 +465,71 @@ describe('resolve_config', () => {
 		assert.strictEqual(stripped.repo_url, null);
 		rmSync(dir, { recursive: true });
 	});
+
+	test('stripping sveltekit needs rust and refuses its flags', async () => {
+		const dir = scratch_dir('strip_sveltekit');
+		assert.notStrictEqual(git_output(dir, ['init', '-q']), null);
+		// a Rust-only project needs no repo url: docs go with the app
+		const config = await resolve_config(
+			top(['--name', 'demo_app', '--strip', 'sveltekit']),
+			dir,
+			false
+		);
+		assert.ok(!config.kept.has(SVELTEKIT));
+		assert.ok(!config.kept.has(DOCS));
+		assert.ok(config.kept.has(RUST));
+		assert.strictEqual(config.npm_name, 'demo_app');
+		assert.strictEqual(config.domain, null);
+		const err = await resolve_config(
+			top(['--name', 'demo_app', '--strip', 'sveltekit,rust']),
+			dir,
+			false
+		).then(
+			() => null,
+			(e: unknown) => e
+		);
+		assert(err instanceof CliError);
+		assert.strictEqual(err.message, FOUNDATION_NEEDED);
+		assert.strictEqual(err.exit_code(), 2);
+		// an empty --domain means no domain, not a SvelteKit-only flag
+		await resolve_config(
+			top(['--name', 'demo_app', '--strip', 'sveltekit', '--domain', ' ']),
+			dir,
+			false
+		);
+		// stripping cli forces rust out, and rust is the last foundation
+		// kept, so the error can't suggest stripping rust too
+		const last_err = await resolve_config(
+			top(['--name', 'demo_app', '--strip', 'sveltekit,cli']),
+			dir,
+			false
+		).then(
+			() => null,
+			(e: unknown) => e
+		);
+		assert(last_err instanceof CliError);
+		assert.ok(
+			last_err.message.endsWith('rust is the last of sveltekit and rust kept'),
+			last_err.message
+		);
+		for (const [flag, value] of [
+			['--npm-name', 'demo'],
+			['--domain', 'example.com']
+		] as const) {
+			const flag_err = await resolve_config(
+				top(['--name', 'demo_app', '--strip', 'sveltekit', flag, value]),
+				dir,
+				false
+			).then(
+				() => null,
+				(e: unknown) => e
+			);
+			assert(flag_err instanceof CliError, flag);
+			assert.ok(flag_err.message.startsWith(flag), flag_err.message);
+			assert.strictEqual(flag_err.exit_code(), 2);
+		}
+		rmSync(dir, { recursive: true });
+	});
 });
 
 describe('apply_gate', () => {
@@ -393,7 +553,7 @@ describe('apply_gate', () => {
 describe('features', () => {
 	test('defaults', () => {
 		const { kept, explicit } = resolve([], []);
-		assert.deepEqual(Array.from(kept).sort(), [CLI, DOCS, RUST]);
+		assert.deepEqual(Array.from(kept).sort(), [CLI, DOCS, RUST, SVELTEKIT]);
 		assert.strictEqual(explicit.size, 0);
 	});
 
@@ -411,6 +571,20 @@ describe('features', () => {
 		assert.ok(!kept.has(CLI));
 	});
 
+	test('strip sveltekit cascades to docs', () => {
+		const { kept } = resolve([], ['sveltekit']);
+		assert.ok(!kept.has(SVELTEKIT));
+		assert.ok(!kept.has(DOCS));
+		assert.ok(kept.has(RUST));
+		assert.ok(has_foundation(kept));
+		assert.throws(() => resolve(['docs'], ['sveltekit']));
+	});
+
+	test('foundations', () => {
+		assert.ok(has_foundation(resolve([], ['rust']).kept));
+		assert.ok(!has_foundation(resolve([], ['sveltekit,rust']).kept));
+	});
+
 	test('conflicts error', () => {
 		assert.throws(() => resolve(['rust'], ['rust']));
 		assert.throws(() => resolve(['cli'], ['rust']));
@@ -425,13 +599,22 @@ describe('features', () => {
 		assert.deepEqual(empty_groups(resolve([], ['cli']).kept), [RUST]);
 	});
 
+	test('members_force_strip needs every member explicitly stripped', () => {
+		const stripped = resolve([], ['cli']);
+		assert.ok(members_force_strip(RUST, stripped.kept, stripped.explicit));
+		const defaults = resolve([], []);
+		assert.ok(!members_force_strip(RUST, defaults.kept, defaults.explicit));
+		// a feature with no members is never forced
+		assert.ok(!members_force_strip(SVELTEKIT, defaults.kept, defaults.explicit));
+	});
+
 	test('members derive from the registry', () => {
 		assert.deepEqual(
 			members_of(RUST).map((f) => f.id),
 			[CLI]
 		);
 		assert.strictEqual(members_of(DOCS).length, 0);
-		assert.strictEqual(FEATURES.length, 4);
+		assert.strictEqual(FEATURES.length, 5);
 	});
 });
 

@@ -6,7 +6,8 @@
 //! template, update the anchor here in the same change.
 
 pub const PACKAGE_JSON_NAME: &str = "  \"name\": \"@fuzdev/fuz_template\",\n";
-pub const PACKAGE_JSON_DESCRIPTION: &str = "  \"description\": \"starter template for SvelteKit web apps, Rust native tools, or both\",\n";
+pub const PACKAGE_JSON_DESCRIPTION: &str =
+    "  \"description\": \"starter template for SvelteKit web apps, Rust native tools, or both\",\n";
 pub const PACKAGE_JSON_GLYPH: &str = "  \"glyph\": \"\u{2744}\",\n";
 pub const PACKAGE_JSON_LOGO: &str = "  \"logo\": \"logo.svg\",\n";
 pub const PACKAGE_JSON_LOGO_ALT: &str =
@@ -67,6 +68,47 @@ pub const APP_CLI_DESCRIPTION: &str = "description = \"a CLI scaffolded by fuz_t
 /// The starter CLI crate's license inheritance line, stripped on eject
 /// (the workspace's license line goes with it).
 pub const APP_CLI_LICENSE: &str = "license.workspace = true\n";
+
+/// The workflow's header, rewritten when the `sveltekit` feature is
+/// stripped — its link is the Node.js guide, and Node is gone.
+pub const CI_HEADER: &str = "# Checks and builds the project. For more info:\n# https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions\n";
+pub const CI_HEADER_REPLACEMENT: &str = "# Checks the project.\n";
+
+/// The comment inside `CI_BUILD_JOB` pointing at this file — removed on eject
+/// when the job is kept, since molt's crate is gone.
+pub const CI_BUILD_JOB_MOLT_COMMENT: &str = "    # molt anchors this job (crates/molt/src/anchors.rs) so stripping\n    # the sveltekit feature can remove it \u{2014} update the anchor when editing.\n";
+
+/// The `build` job in `.github/workflows/check.yml`, with the blank line that
+/// follows it — kept here as an exact-match anchor so stripping the
+/// `sveltekit` feature can remove it. The `rust` job is always kept then, so
+/// its anchor's leading newline is never needed alongside this one.
+pub const CI_BUILD_JOB: &str = r"  build:
+    # molt anchors this job (crates/molt/src/anchors.rs) so stripping
+    # the sveltekit feature can remove it — update the anchor when editing.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      matrix:
+        node-version: ['24.14']
+
+    steps:
+      # persist-credentials: false keeps the GITHUB_TOKEN out of .git/config, so a
+      # compromised build dependency can't read it. If you add a step that pushes
+      # via git (deploy, tag, generated commit), set this back to true or
+      # authenticate that step explicitly.
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: npx @fuzdev/gro check --workspace --build
+
+";
 
 /// The comment inside `CI_RUST_JOB` pointing at this file — removed on eject
 /// when the job is kept, since molt's crate is gone.

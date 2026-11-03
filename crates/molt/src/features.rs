@@ -28,12 +28,20 @@ pub struct Feature {
     pub member_of: Option<&'static str>,
 }
 
+pub const SVELTEKIT: &str = "sveltekit";
 pub const RUST: &str = "rust";
 pub const CLI: &str = "cli";
 pub const DOCS: &str = "docs";
 pub const GITHUB_EXTRAS: &str = "github-extras";
 
-pub const FEATURES: [Feature; 4] = [
+pub const FEATURES: [Feature; 5] = [
+    Feature {
+        id: SVELTEKIT,
+        prompt: "keep the SvelteKit app? (src/, static/, package.json, and the npm toolchain)",
+        default_keep: true,
+        requires: None,
+        member_of: None,
+    },
     Feature {
         id: RUST,
         prompt: "keep the Rust workspace? (includes the starter CLI crate, renamed to crates/<name>)",
@@ -54,7 +62,7 @@ pub const FEATURES: [Feature; 4] = [
         id: DOCS,
         prompt: "keep the docs system? (src/routes/docs, auto-generated API docs)",
         default_keep: true,
-        requires: None,
+        requires: Some(SVELTEKIT),
         member_of: None,
     },
     Feature {
@@ -65,6 +73,15 @@ pub const FEATURES: [Feature; 4] = [
         member_of: None,
     },
 ];
+
+/// The features a project is built from — at least one must be kept, or the
+/// molted project would hold nothing to build.
+pub const FOUNDATIONS: [&str; 2] = [SVELTEKIT, RUST];
+
+/// Whether `kept` holds at least one of the `FOUNDATIONS`.
+pub fn has_foundation(kept: &BTreeSet<&'static str>) -> bool {
+    FOUNDATIONS.iter().any(|id| kept.contains(id))
+}
 
 /// Splits repeatable/CSV flag values into feature ids, validating each.
 pub fn parse_ids(values: &[String]) -> Result<Vec<&'static str>, CliError> {
@@ -147,6 +164,18 @@ pub fn members_of(parent: &str) -> impl Iterator<Item = &'static Feature> {
     FEATURES.iter().filter(move |f| f.member_of == Some(parent))
 }
 
+/// Whether flags already force `parent` stripped: it has required members
+/// and every one was explicitly stripped (cargo rejects a workspace with no
+/// member crates, say).
+pub fn members_force_strip(
+    parent: &str,
+    kept: &BTreeSet<&'static str>,
+    explicit: &BTreeSet<&'static str>,
+) -> bool {
+    members_of(parent).next().is_some()
+        && members_of(parent).all(|m| explicit.contains(m.id) && !kept.contains(m.id))
+}
+
 /// Kept features whose required members are all stripped — invalid
 /// combinations the caller must reject (or repair by stripping the parent
 /// too). Registry order, so callers report deterministically.
@@ -173,7 +202,10 @@ mod tests {
     #[test]
     fn defaults() {
         let (kept, explicit) = resolve(&[], &[]).unwrap();
-        assert_eq!(kept.into_iter().collect::<Vec<_>>(), vec![CLI, DOCS, RUST]);
+        assert_eq!(
+            kept.into_iter().collect::<Vec<_>>(),
+            vec![CLI, DOCS, RUST, SVELTEKIT]
+        );
         assert!(explicit.is_empty());
     }
 
@@ -194,6 +226,24 @@ mod tests {
     }
 
     #[test]
+    fn strip_sveltekit_cascades_to_docs() {
+        let (kept, _) = resolve(&[], &strings(&["sveltekit"])).unwrap();
+        assert!(!kept.contains(SVELTEKIT));
+        assert!(!kept.contains(DOCS));
+        assert!(kept.contains(RUST));
+        assert!(has_foundation(&kept));
+        assert!(resolve(&strings(&["docs"]), &strings(&["sveltekit"])).is_err());
+    }
+
+    #[test]
+    fn foundations() {
+        let (kept, _) = resolve(&[], &strings(&["rust"])).unwrap();
+        assert!(has_foundation(&kept));
+        let (kept, _) = resolve(&[], &strings(&["sveltekit,rust"])).unwrap();
+        assert!(!has_foundation(&kept));
+    }
+
+    #[test]
     fn conflicts_error() {
         assert!(resolve(&strings(&["rust"]), &strings(&["rust"])).is_err());
         assert!(resolve(&strings(&["cli"]), &strings(&["rust"])).is_err());
@@ -210,6 +260,16 @@ mod tests {
         // combination `resolve_config` rejects
         let (kept, _) = resolve(&[], &strings(&["cli"])).unwrap();
         assert_eq!(empty_groups(&kept), vec![RUST]);
+    }
+
+    #[test]
+    fn members_force_strip_needs_every_member_explicitly_stripped() {
+        let (kept, explicit) = resolve(&[], &strings(&["cli"])).unwrap();
+        assert!(members_force_strip(RUST, &kept, &explicit));
+        let (kept, explicit) = resolve(&[], &[]).unwrap();
+        assert!(!members_force_strip(RUST, &kept, &explicit));
+        // a feature with no members is never forced
+        assert!(!members_force_strip(SVELTEKIT, &kept, &explicit));
     }
 
     #[test]
