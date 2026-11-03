@@ -1,6 +1,6 @@
 # fuz_template
 
-> SvelteKit starter template with full fuz stack integration
+> starter template for SvelteKit web apps, Rust native tools, or both, with full fuz stack integration
 
 fuz_template (`@fuzdev/fuz_template`) is a production-ready starter template for
 building static web applications with the fuz stack. Clone it to start new

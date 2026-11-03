@@ -550,7 +550,7 @@ export const normalize_remote_url = (url: string): string | null =>
 
 const PACKAGE_JSON_NAME = '  "name": "@fuzdev/fuz_template",\n';
 const PACKAGE_JSON_DESCRIPTION =
-	'  "description": "a web app template with TypeScript + SvelteKit + optional Rust for the fuz-stack",\n';
+	'  "description": "starter template for SvelteKit web apps, Rust native tools, or both",\n';
 const PACKAGE_JSON_GLYPH = '  "glyph": "❄",\n';
 const PACKAGE_JSON_LOGO = '  "logo": "logo.svg",\n';
 const PACKAGE_JSON_LOGO_ALT = '  "logo_alt": "a friendly orange pixelated spider facing you",\n';

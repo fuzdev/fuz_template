@@ -2,9 +2,12 @@
 
 [<img src="/static/logo.svg" alt="a friendly orange pixelated spider facing you" align="right" width="192" height="192">](https://template.fuz.dev/)
 
-> a web app template with TypeScript + SvelteKit + optional Rust for the fuz-stack
+> starter template for SvelteKit web apps, Rust native tools, or both
 
 [**template.fuz.dev**](https://template.fuz.dev/)
+
+fuz_template starts a SvelteKit web app, a Rust workspace for native tools like CLIs, or both.
+GUIs are web-only for now, with native in the future.
 
 ## contents
 
@@ -12,7 +15,7 @@
   [Vite](https://github.com/vitejs/vite) and optional [Rust](https://rust-lang.org/)
 - [fuz_css](https://github.com/fuzdev/fuz_css): semantic-first CSS framework and design system
 - [fuz_ui](https://github.com/fuzdev/fuz_ui):
-  - Svelte UI library - [ui.fuz.dev](https://ui.fuz.dev/)
+  - Svelte component library and frontend helpers - [ui.fuz.dev](https://ui.fuz.dev/)
   - optional: `npm uninstall @fuzdev/fuz_ui` and delete the imports to remove it
 - [Gro](https://github.com/fuzdev/gro):
   - extends [SvelteKit](https://github.com/sveltejs/kit) and
