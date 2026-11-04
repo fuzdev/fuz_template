@@ -306,7 +306,6 @@ committed.
 Uses fuz_ui's tome system:
 
 - `docs/tomes.ts` - defines documentation pages
-- `docs/library/` - shows `LibraryDetail` component
 - `docs/api/` - auto-generated API docs from `virtual:svelte-docinfo`
 - `docs/api/[...module_path]/` - dynamic module documentation
 
