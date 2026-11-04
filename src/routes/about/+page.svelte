@@ -23,7 +23,7 @@
 			<Breadcrumb />
 		</div>
 	</section>
-	<!-- <section class="box width:100% mb_lg">
+	<!-- <section class="box mb_lg">
 		<div class="panel p_lg width_atmost_md">
 			<LibrarySummary {library} />
 		</div>
