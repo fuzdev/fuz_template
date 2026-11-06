@@ -8,7 +8,7 @@ to start new projects with TypeScript, Svelte 5, SvelteKit, a Rust workspace,
 and the complete fuz ecosystem pre-configured; molt strips the side you don't
 need.
 
-For coding conventions, see Skill(fuz-stack).
+For coding conventions, see the [fuz-stack skill](https://docs.fuz.dev/skills/fuz-stack).
 
 ## Gro commands
 

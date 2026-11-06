@@ -1,4 +1,5 @@
 # __NAME__
 
 __DESCRIPTION_BLOCK____NAME__ is built with the fuz stack, starting from fuz_template.
+For coding conventions, see the [fuz-stack skill](https://docs.fuz.dev/skills/fuz-stack).
 __SVELTEKIT_SECTION____RUST_SECTION__

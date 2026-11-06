@@ -10,6 +10,9 @@ fuz_template starts a SvelteKit web app, a Rust workspace for native tools like 
 After cloning, its [molt](#molt) wizard turns the template into your project and strips the side
 you don't need. GUIs are web-only for now, with native in the future.
 
+The stack's coding conventions are in the [fuz-stack skill](https://docs.fuz.dev/skills/fuz-stack),
+which you can install for your coding agent.
+
 ## contents
 
 - [SvelteKit](https://github.com/sveltejs/kit) with [Svelte](https://github.com/sveltejs/svelte) and
