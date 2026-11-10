@@ -30,7 +30,7 @@ gro sync      # regenerate files and run svelte-kit sync
 - fuz_ui (@fuzdev/fuz_ui) - UI components, theming, docs system
 - fuz_util (@fuzdev/fuz_util) - utility functions
 - fuz_code (@fuzdev/fuz_code) - syntax highlighting
-- fuz_schema (@fuzdev/fuz_schema) - Standard Schema library (peer dep of fuz_util, fuz_css, and gro)
+- fuz_schema (@fuzdev/fuz_schema) - schema library (peer dep of fuz_util, fuz_css, and gro)
 - mdz (@fuzdev/mdz) - minimal markdown dialect and its Svelte preprocessor
 - blake3-wasm (@fuzdev/blake3-wasm) - BLAKE3 hashing compiled to WASM (peer dep of fuz_util and gro)
 - svelte-docinfo - static analysis behind the API docs (Vite plugin)
