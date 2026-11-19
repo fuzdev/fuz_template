@@ -1,0 +1,1 @@
+var e=e=>{if(!e)return!1;let{tagName:t}=e;return t===`INPUT`&&e.type!==`hidden`||t===`TEXTAREA`||e.contentEditable===`true`||e.contentEditable===``},t=(e,t=!0,n=!0)=>(n&&e.preventDefault(),t?e.stopImmediatePropagation():e.stopPropagation(),e);export{t as n,e as t};
