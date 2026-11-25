@@ -684,7 +684,7 @@ const CI_BUILD_JOB = `  build:
           node-version: \${{ matrix.node-version }}
           cache: npm
       - run: npm ci
-      - run: npx @fuzdev/gro check --workspace --build
+      - run: npx @fuzdev/gro check --workspace --build --lint
 
 `;
 
@@ -2128,7 +2128,7 @@ const print_next_steps = (config: MoltConfig, clean: boolean): void => {
 	console.log('  git status   # review what changed');
 	if (keeps(config, SVELTEKIT)) {
 		console.log('  npm i        # refresh package-lock.json for the new name');
-		console.log('  gro check    # typecheck, test, lint, format');
+		console.log('  gro check    # typecheck, test, format');
 	} else {
 		console.log(
 			"  rm -rf node_modules .svelte-kit .gro  # the npm toolchain's untracked leftovers, if present"
